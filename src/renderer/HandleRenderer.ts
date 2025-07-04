@@ -85,19 +85,17 @@ export default class HandleRenderer {
     }
 
     sync(handles: Handle[]) {
-        console.log(handles);
-
         this.instanceCount = handles.length;
 
-        const flat = new Float32Array(handles.length * 8); // 2+4 floats
+        const instanceArray = new Float32Array(handles.length * 8); // 2+4 floats
 
         handles.forEach((h, i) => {
-            flat.set(h.color, i * 8);
-            flat.set(h.position, i * 8 + 4);
-            flat[i * 8 + 6] = h.radius ?? 30;
+            instanceArray.set(h.color, i * 8);
+            instanceArray.set(h.position, i * 8 + 4);
+            instanceArray[i * 8 + 6] = h.radius ?? 30;
         });
 
-        this.context.gpu.updateBuffer(this.instanceBuffer, flat);
+        this.context.gpu.updateBuffer(this.instanceBuffer, instanceArray);
     }
 
     render(pass: GPURenderPassEncoder) {

@@ -61,15 +61,15 @@ export default class NodeRenderer {
     sync(nodeArray: Node[]) {
         if (this.instanceBuffer == null) return;
         this.instanceCount = nodeArray.length;
-        const flat = new Float32Array(nodeArray.length * 12);
+        const instanceArray = new Float32Array(nodeArray.length * 12);
 
         nodeArray.forEach((node, i) => {
-            flat.set(node.position, i * 12 + 0);
-            flat.set(node.size, i * 12 + 2);
-            flat.set(node.color, i * 12 + 4);
+            instanceArray.set(node.position, i * 12 + 0);
+            instanceArray.set(node.size, i * 12 + 2);
+            instanceArray.set(node.color, i * 12 + 4);
         });
 
-        this.context.gpu.updateBuffer(this.instanceBuffer, flat);
+        this.context.gpu.updateBuffer(this.instanceBuffer, instanceArray);
     }
 
     render(pass: GPURenderPassEncoder) {
