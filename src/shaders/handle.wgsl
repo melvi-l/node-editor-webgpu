@@ -1,5 +1,9 @@
-@group(0) @binding(0)
-var<uniform> uProjectionMatrix: mat4x4<f32>;
+struct VertexInput {
+    @location(0) quadPos: vec2f,
+    @location(1) color: vec4f,
+    @location(2) center: vec2f,
+    @location(3) radius: f32,
+}
 
 struct Out {
     @builtin(position) position: vec4f,
@@ -7,20 +11,20 @@ struct Out {
     @location(1) local: vec2f
 };
 
+@group(0) @binding(0)
+var<uniform> uProjectionMatrix: mat4x4<f32>;
+
 @vertex
 fn vs_main(
-    @location(0) quadPos: vec2f,
-    @location(1) color: vec4f,
-    @location(2) center: vec2f,
-    @location(3) radius: f32,
+    input: VertexInput
 ) -> Out {
     var out: Out;
-    let scaled = quadPos * radius;
-    let worldPos = center + scaled;
+    let scaled = input.quadPos * input.radius;
+    let worldPos = input.center + scaled;
 
     out.position = uProjectionMatrix * vec4f(worldPos, 0.0, 1.0);
-    out.color = color;
-    out.local = quadPos;
+    out.color = input.color;
+    out.local = input.quadPos;
 
     return out;
 }
