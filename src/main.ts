@@ -40,14 +40,17 @@ async function main(...size: [number, number]) {
             {
                 position: [350, 250],
                 color: [1, 1, 1, 1],
+                radius: 2
             },
             {
                 position: [450, 350],
                 color: [1, 1, 0, 1],
+                radius: 200
             },
             {
                 position: [200, 150],
                 color: [0, 1, 1, 1],
+                radius: 10
             },
             {
                 position: [800, 0],

@@ -4,6 +4,7 @@ import { RenderContext } from "./type";
 type HandleInstance = {
     position: [number, number];
     color: [number, number];
+    radius: number;
 };
 type HandleRendererOptions = {
     radius: number;
@@ -29,21 +30,12 @@ export default class HandleRenderer {
         const { radius, segmentCount } = this.opts;
         const vertices = new Float32Array(segmentCount * 3 * 2);
 
-        for (let i = 0; i < segmentCount; i++) {
-            const angle1 = (i / segmentCount) * Math.PI * 2;
-            const angle2 = ((i + 1) / segmentCount) * Math.PI * 2;
-
-            vertices[i * 6] = 0;
-            vertices[i * 6 + 1] = 0;
-            vertices[i * 6 + 2] = Math.cos(angle1) * radius;
-            vertices[i * 6 + 3] = Math.sin(angle1) * radius;
-            vertices[i * 6 + 4] = Math.cos(angle2) * radius;
-            vertices[i * 6 + 5] = Math.sin(angle2) * radius;
-        }
-        console.log(vertices);
+        const quadVertices = new Float32Array([
+            -1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1,
+        ]);
 
         this.vertexBuffer = this.context.gpu.createBuffer(
-            vertices,
+            quadVertices,
             GPUBufferUsage.VERTEX,
         );
 
@@ -65,8 +57,9 @@ export default class HandleRenderer {
                         arrayStride: 32,
                         stepMode: "instance",
                         attributes: [
-                            { shaderLocation: 1, offset: 0, format: "float32x2" }, // position
-                            { shaderLocation: 2, offset: 8, format: "float32x4" }, // color
+                            { shaderLocation: 1, offset: 0, format: "float32x4" }, // color
+                            { shaderLocation: 2, offset: 16, format: "float32x2" }, // center
+                            { shaderLocation: 3, offset: 24, format: "float32" }, // radius
                         ],
                     },
                 ],
@@ -74,7 +67,23 @@ export default class HandleRenderer {
             fragment: {
                 module: shader,
                 entryPoint: "fs_main",
-                targets: [{ format: this.context.gpu.format }],
+                targets: [
+                    {
+                        format: this.context.gpu.format,
+                        blend: {
+                            color: {
+                                srcFactor: "src-alpha",
+                                dstFactor: "one-minus-src-alpha",
+                                operation: "add",
+                            },
+                            alpha: {
+                                srcFactor: "one",
+                                dstFactor: "one-minus-src-alpha",
+                                operation: "add",
+                            },
+                        },
+                    },
+                ],
             },
         });
 
@@ -92,8 +101,9 @@ export default class HandleRenderer {
         const flat = new Float32Array(handles.length * 8); // 2+4 floats
 
         handles.forEach((h, i) => {
-            flat.set(h.position, i * 8);
-            flat.set(h.color, i * 8 + 2);
+            flat.set(h.color, i * 8);
+            flat.set(h.position, i * 8 + 4);
+            flat[i * 8 + 6] = h.radius ?? 30;
         });
 
         this.context.gpu.updateBuffer(this.instanceBuffer, flat);
@@ -104,6 +114,6 @@ export default class HandleRenderer {
         pass.setBindGroup(0, this.context.viewport.bindGroup);
         pass.setVertexBuffer(0, this.vertexBuffer);
         pass.setVertexBuffer(1, this.instanceBuffer);
-        pass.draw(this.vertexBuffer.size / 4 / 2, this.instanceCount);
+        pass.draw(6, this.instanceCount);
     }
 }
