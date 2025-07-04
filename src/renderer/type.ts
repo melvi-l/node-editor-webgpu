@@ -10,3 +10,8 @@ export interface RenderContext {
     gpu: GPUResources;
     viewport: ViewportUniform;
 }
+export interface Uniform {
+    buffer: GPUBuffer;
+    bindGroup: GPUBindGroup;
+    bindGroupLayout: GPUBindGroupLayout;
+}

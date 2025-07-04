@@ -1,20 +1,20 @@
 import { makeOrthoProjection } from "@/utils/mat4";
 import GPUResources from "./GPUResources";
-import { ViewportSize } from "./type";
+import { Uniform, ViewportSize } from "./type";
 
-export default class ViewportUniform {
-    private _buffer: GPUBuffer;
-    private _bindGroup: GPUBindGroup;
-    private _bindGroupLayout: GPUBindGroupLayout;
+export default class ViewportUniform implements Uniform {
+    public buffer: GPUBuffer;
+    public bindGroup: GPUBindGroup;
+    public bindGroupLayout: GPUBindGroupLayout;
     private _matrix = new Float32Array(16);
 
     constructor(gpu: GPUResources, { width, height }: ViewportSize) {
-        this._buffer = gpu.initBuffer(
+        this.buffer = gpu.initBuffer(
             64,
             GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         );
 
-        this._bindGroupLayout = gpu.device.createBindGroupLayout({
+        this.bindGroupLayout = gpu.device.createBindGroupLayout({
             label: "viewport-layout",
             entries: [
                 {
@@ -27,8 +27,8 @@ export default class ViewportUniform {
             ],
         });
 
-        this._bindGroup = gpu.createBindGroup(this._bindGroupLayout, [
-            { binding: 0, resource: { buffer: this._buffer } },
+        this.bindGroup = gpu.createBindGroup(this.bindGroupLayout, [
+            { binding: 0, resource: { buffer: this.buffer } },
         ]);
 
         this.update(gpu, { width, height });
@@ -36,13 +36,6 @@ export default class ViewportUniform {
 
     update(gpu: GPUResources, { width, height }: ViewportSize) {
         this._matrix = makeOrthoProjection(width, height);
-        gpu.updateBuffer(this._buffer, this._matrix);
-    }
-
-    get bindGroup(): GPUBindGroup {
-        return this._bindGroup;
-    }
-    get bindGroupLayout(): GPUBindGroupLayout {
-        return this._bindGroupLayout;
+        gpu.updateBuffer(this.buffer, this._matrix);
     }
 }
