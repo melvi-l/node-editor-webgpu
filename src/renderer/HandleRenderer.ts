@@ -6,10 +6,7 @@ type HandleInstance = {
     color: [number, number];
     radius: number;
 };
-type HandleRendererOptions = {
-    radius: number;
-    segmentCount: number;
-};
+type HandleRendererOptions = {};
 export default class HandleRenderer {
     private context: RenderContext;
     private pipeline!: GPURenderPipeline;
@@ -18,18 +15,12 @@ export default class HandleRenderer {
     private instanceCount = 0;
     private opts: HandleRendererOptions;
 
-    constructor(
-        context: RenderContext,
-        opts: HandleRendererOptions = { radius: 1, segmentCount: 32 },
-    ) {
+    constructor(context: RenderContext, opts: HandleRendererOptions = {}) {
         this.context = context;
         this.opts = opts;
     }
 
     async init() {
-        const { radius, segmentCount } = this.opts;
-        const vertices = new Float32Array(segmentCount * 3 * 2);
-
         const quadVertices = new Float32Array([
             -1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1,
         ]);
