@@ -1,3 +1,5 @@
+import { ViewportSize } from "./type";
+
 export default class GPUResources {
     device!: GPUDevice;
     context!: GPUCanvasContext;
@@ -33,6 +35,11 @@ export default class GPUResources {
                 console.warn(ev.error.message),
             );
         }
+    }
+
+    update({ width, height }: ViewportSize) {
+        this.canvas.width = width;
+        this.canvas.height = height;
     }
 
     createShader(code: string): GPUShaderModule {
@@ -120,5 +127,9 @@ export default class GPUResources {
     endFrame(): void {
         this.pass.end();
         this.device.queue.submit([this.encoder.finish()]);
+    }
+
+    get canvasSize(): ViewportSize {
+        return { width: this.canvas.width, height: this.canvas.height };
     }
 }

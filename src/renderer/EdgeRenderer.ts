@@ -1,12 +1,12 @@
 import Edge from "@/core/Edge";
-import GPUResources from "./GPUResources";
+import { RenderContext } from "./type";
 
 export default class EdgeRenderer {
-    gpu: GPUResources;
-    constructor(gpu: GPUResources) {
-        this.gpu = gpu;
+    context: RenderContext;
+    constructor(context: RenderContext) {
+        this.context = context;
     }
-    async init() {}
+    async init() { }
     sync(edgeArray: Edge[]) { }
     render(pass: GPURenderPassEncoder) { }
 }

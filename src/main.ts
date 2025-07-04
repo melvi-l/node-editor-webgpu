@@ -24,10 +24,36 @@ async function main(...size: [number, number]) {
 
     renderer.syncGraph({
         nodes: [
-            { position: [0, 0], size: [0.5, 0.5], color: [1, 0, 0, 1] },
-            { position: [-0.5, -0.5], size: [0.25, 0.5], color: [0, 1, 0, 1] },
+            {
+                position: [400, 300],
+                size: [100, 100],
+                color: [1, 0, 0, 1],
+            },
+            {
+                position: [200, 150],
+                size: [50, 100],
+                color: [0, 1, 0, 1],
+            },
         ],
         edges: [],
+        handles: [
+            {
+                position: [350, 250],
+                color: [1, 1, 1, 1],
+            },
+            {
+                position: [450, 350],
+                color: [1, 1, 0, 1],
+            },
+            {
+                position: [200, 150],
+                color: [0, 1, 1, 1],
+            },
+            {
+                position: [800, 0],
+                color: [1, 0, 1, 1],
+            },
+        ],
     });
 
     function frame() {
@@ -35,6 +61,10 @@ async function main(...size: [number, number]) {
         requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
+
+    window.addEventListener("resize", () => {
+        renderer.resize({ width: window.innerWidth, height: window.innerHeight });
+    });
 }
 
 main(window.innerWidth, window.innerHeight);
