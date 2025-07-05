@@ -1,5 +1,6 @@
 import Edge from "@/core/Edge";
 import { RenderContext, Uniform } from "./type";
+import { computeMitter, direction, normal, Vec2 } from "@/utils/math";
 
 type EdgeRendererOptions = {
     width: number;
@@ -58,7 +59,7 @@ export default class EdgeRenderer {
                         ],
                     },
                     {
-                        arrayStride: 32, // 8 floats = 32 bytes per instance
+                        arrayStride: 56, // 14 floats = 56 bytes per instance
                         stepMode: "instance",
                         attributes: [
                             {
@@ -75,7 +76,27 @@ export default class EdgeRenderer {
                                 shaderLocation: 3,
                                 offset: 24,
                                 format: "float32x2",
+                            }, // startNormal
+                            {
+                                shaderLocation: 4,
+                                offset: 32,
+                                format: "float32x2",
                             }, // end
+                            {
+                                shaderLocation: 5,
+                                offset: 40,
+                                format: "float32x2",
+                            }, // endNormal
+                            {
+                                shaderLocation: 6,
+                                offset: 48,
+                                format: "float32",
+                            }, // startMiterLength
+                            {
+                                shaderLocation: 7,
+                                offset: 52,
+                                format: "float32",
+                            }, // startMiterLength
                         ],
                     },
                 ],
@@ -115,10 +136,54 @@ export default class EdgeRenderer {
 
         edgeArray.forEach((edge) => {
             const { color, path } = edge;
-            for (let i = 0; i < path.length - 1; i++) {
-                const start = path[i];
-                const end = path[i + 1];
-                instanceData.push(...color, ...start, ...end);
+
+            let lastMiter: {
+                miter: Vec2;
+                miterFactor: number;
+            } | null = null;
+            for (let i = 1; i < path.length; i++) {
+                const last = path[i - 1];
+                const curr = path[i];
+                const next = i < path.length - 1 ? path[i + 1] : null;
+
+                const dirA = direction(last, curr);
+                if (i === 1) {
+                    lastMiter = {
+                        miter: normal(dirA),
+                        miterFactor: 1,
+                    };
+                }
+                if (lastMiter == null)
+                    throw new Error("Should be possible to access lastMitter");
+                if (next != null) {
+                    const dirB = direction(curr, next);
+                    const { miter, miterFactor } = computeMitter(dirA, dirB);
+                    instanceData.push(
+                        ...color,
+                        ...last,
+                        ...lastMiter.miter,
+                        ...curr,
+                        ...miter,
+                        lastMiter.miterFactor,
+                        miterFactor,
+                    );
+                    lastMiter = {
+                        miter,
+                        miterFactor,
+                    };
+                } else {
+                    instanceData.push(
+                        ...color,
+                        ...last,
+                        ...lastMiter.miter,
+                        ...curr,
+                        ...normal(dirA),
+                        lastMiter.miterFactor,
+                        1,
+                    );
+                    console.log(dirA, normal(dirA));
+                    lastMiter = null; // clean
+                }
             }
         });
 
