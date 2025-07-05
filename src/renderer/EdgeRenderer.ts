@@ -5,26 +5,33 @@ type EdgeRendererOptions = {
     width: number;
 };
 
-const FLOATS_PER_VERTEX = 9; // position:2 + normal:2 + miter:1 + color:4
-const VERTICES_PER_SEGMENT = 4; // start:2 + end:2
-const FLOATS_PER_SEGMENT = FLOATS_PER_VERTEX * VERTICES_PER_SEGMENT;
-
+// Instanciated (and triangle-stip) version of the stroke extension in vertex shader
 export default class EdgeRenderer {
     private context: RenderContext;
     private pipeline!: GPURenderPipeline;
-    private vertexBuffer!: GPUBuffer;
-    private vertexCount = 0;
+    private unitQuadBuffer!: GPUBuffer;
+    private instanceBuffer!: GPUBuffer;
+    private instanceCount = 0;
     private opts: EdgeRendererOptions;
     private optsUniform!: Uniform;
 
     constructor(
         context: RenderContext,
-        opts: EdgeRendererOptions = { width: 2 },
+        opts: EdgeRendererOptions = { width: 20 },
     ) {
         this.context = context;
         this.opts = opts;
     }
     async init() {
+        const unitQuad = new Float32Array([
+            // miter, t (=0 for start, =1 for end)
+            +1, 0, -1, 0, +1, 1, -1, 1,
+        ]);
+        this.unitQuadBuffer = this.context.gpu.createBuffer(
+            unitQuad,
+            GPUBufferUsage.VERTEX,
+        );
+
         const shader = await this.context.gpu.loadShaderModule("edge");
 
         this.optsUniform = this.computeOptsUniform();
@@ -40,29 +47,35 @@ export default class EdgeRenderer {
                 entryPoint: "vs_main",
                 buffers: [
                     {
-                        arrayStride: 48,
+                        arrayStride: 8, // 2 floats per vertex
                         stepMode: "vertex",
                         attributes: [
                             {
                                 shaderLocation: 0,
                                 offset: 0,
+                                format: "float32x2",
+                            }, // miter, t
+                        ],
+                    },
+                    {
+                        arrayStride: 32, // 8 floats = 32 bytes per instance
+                        stepMode: "instance",
+                        attributes: [
+                            {
+                                shaderLocation: 1,
+                                offset: 0,
                                 format: "float32x4",
                             }, // color
                             {
-                                shaderLocation: 1,
+                                shaderLocation: 2,
                                 offset: 16,
                                 format: "float32x2",
-                            }, // position
-                            {
-                                shaderLocation: 2,
-                                offset: 24,
-                                format: "float32x2",
-                            }, // normal
+                            }, // start
                             {
                                 shaderLocation: 3,
-                                offset: 32,
-                                format: "float32",
-                            }, // mitter
+                                offset: 24,
+                                format: "float32x2",
+                            }, // end
                         ],
                     },
                 ],
@@ -88,77 +101,48 @@ export default class EdgeRenderer {
                     },
                 ],
             },
+            primitive: { topology: "triangle-strip" },
         });
 
-        this.vertexBuffer = this.context.gpu.initBuffer(
-            1024 * 256, // should maybe increase (256 KiB ~= 7281 vertices (~1213 segments))
+        this.instanceBuffer = this.context.gpu.initBuffer(
+            1024 * 256, // should maybe increase
             GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         );
     }
 
     sync(edgeArray: Edge[]) {
-        const instanceArray: number[] = [];
+        const instanceData: number[] = [];
 
         edgeArray.forEach((edge) => {
-            const { path, color } = edge;
-
+            const { color, path } = edge;
             for (let i = 0; i < path.length - 1; i++) {
-                if (path.length < 2)
-                    throw new Error("Segment should have 2 vertices");
                 const start = path[i];
                 const end = path[i + 1];
-
-                const dx = end[0] - start[0];
-                const dy = end[1] - start[1];
-
-                if (dx !== 0 && dy !== 0)
-                    throw new Error("Segment should be vertical OR horizontal");
-
-                const normal = dy !== 0 ? [1, 0] : [0, 1];
-
-                instanceArray.push(
-                    ...color,
-                    ...start,
-                    ...normal,
-                    +1,
-                    ...color,
-                    ...start,
-                    ...normal,
-                    -1,
-                    ...color,
-                    ...end,
-                    ...normal,
-                    +1,
-                    ...color,
-                    ...end,
-                    ...normal,
-                    -1,
-                );
+                instanceData.push(...color, ...start, ...end);
             }
         });
 
-        this.vertexCount = instanceArray.length / FLOATS_PER_VERTEX;
-
+        this.instanceCount = instanceData.length / 8;
         this.context.gpu.updateBuffer(
-            this.vertexBuffer,
-            new Float32Array(instanceArray),
+            this.instanceBuffer,
+            new Float32Array(instanceData),
         );
     }
 
     render(pass: GPURenderPassEncoder) {
         if (
             this.pipeline == null ||
-            this.vertexBuffer == null ||
-            this.vertexCount === 0
+            this.instanceBuffer == null ||
+            this.instanceCount === 0
         )
             return;
 
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.context.viewport.bindGroup);
         pass.setBindGroup(1, this.optsUniform.bindGroup);
-        pass.setVertexBuffer(0, this.vertexBuffer);
-        pass.draw(this.vertexCount);
-        console.log("draw edge");
+        pass.setVertexBuffer(0, this.unitQuadBuffer); // 4 vertices
+        pass.setVertexBuffer(1, this.instanceBuffer); // N segments
+        pass.draw(4, this.instanceCount); // 4 vertices per quad, N instances
     }
 
     computeOptsUniform() {

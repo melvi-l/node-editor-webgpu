@@ -2,35 +2,37 @@ struct LineOptions {
     width: f32
 }
 
-struct VertexInput {
-    @location(0) color: vec4f,
-    @location(1) position: vec2f, // naming could be improve
-    @location(2) normal: vec2f,
-    @location(3) miter: f32,
-}
+struct VertexIn {
+    @location(0) miterAndT: vec2f,
+    @location(1) color: vec4f,
+    @location(2) start: vec2f,
+    @location(3) end: vec2f,
+};
 
 struct Out {
     @builtin(position) position: vec4f,
     @location(0) color: vec4f,
 };
 
-@group(0) @binding(0)
-var<uniform> uProjectionMatrix: mat4x4<f32>;
-
-@group(1) @binding(0) 
-var<uniform> uOpts: LineOptions;
+@group(0) @binding(0) var<uniform> uProjectionMatrix: mat4x4<f32>;
+@group(1) @binding(0) var<uniform> uOpts: LineOptions;
 
 @vertex
-fn vs_main(input: VertexInput) -> Out {
-    var output: Out;
+fn vs_main(input: VertexIn) -> Out {
+    var out: Out;
 
-    let offset = input.normal * (uOpts.width * 0.5) * input.miter;
-    let worldPos = input.position + offset;
+    let dir = normalize(input.end - input.start);
+    let normal = vec2f(-dir.y, dir.x);
 
-    output.position = uProjectionMatrix * vec4f(worldPos, 0.0, 1.0);
-    output.color = input.color;
+    let pos = mix(input.start, input.end, input.miterAndT.y);
+    let offset = normal * input.miterAndT.x * uOpts.width * 0.5;
 
-    return output;
+    let worldPos = pos + offset;
+
+    out.position = uProjectionMatrix * vec4f(worldPos, 0.0, 1.0);
+    out.color = input.color;
+
+    return out;
 }
 
 @fragment
