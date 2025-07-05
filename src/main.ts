@@ -78,7 +78,10 @@ async function main(...size: [number, number]) {
     requestAnimationFrame(frame);
 
     window.addEventListener("resize", () => {
-        renderer.resize({ width: window.innerWidth, height: window.innerHeight });
+        renderer.resize({
+            width: window.innerWidth,
+            height: window.innerHeight,
+        });
     });
 }
 

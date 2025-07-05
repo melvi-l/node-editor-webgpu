@@ -37,8 +37,8 @@ export default class Renderer {
         const pass = this.context.gpu.beginFrame();
 
         this.edgeRenderer.render(pass);
-        this.nodeRenderer.render(pass);
-        this.handleRenderer.render(pass);
+        // this.nodeRenderer.render(pass);
+        // this.handleRenderer.render(pass);
 
         this.context.gpu.endFrame();
     }

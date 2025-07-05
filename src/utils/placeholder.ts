@@ -1,3 +1,3 @@
 export function unimplemented(): never {
-  throw new Error("Unimplemented");
+    throw new Error("Unimplemented");
 }

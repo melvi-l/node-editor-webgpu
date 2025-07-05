@@ -47,7 +47,10 @@ export default class GPUResources {
     }
     async loadShaderModule(name: string): Promise<GPUShaderModule> {
         const code = (await import(`@/shaders/${name}.wgsl?raw`)).default;
-        return this.device.createShaderModule({ label: `${name}-shader`,code });
+        return this.device.createShaderModule({
+            label: `${name}-shader`,
+            code,
+        });
     }
 
     initBuffer(size: number, usage: GPUBufferUsageFlags): GPUBuffer {

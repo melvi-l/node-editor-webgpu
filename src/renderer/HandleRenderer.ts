@@ -42,15 +42,33 @@ export default class HandleRenderer {
                 buffers: [
                     {
                         arrayStride: 8,
-                        attributes: [{ shaderLocation: 0, offset: 0, format: "float32x2" }],
+                        attributes: [
+                            {
+                                shaderLocation: 0,
+                                offset: 0,
+                                format: "float32x2",
+                            },
+                        ],
                     },
                     {
                         arrayStride: 32,
                         stepMode: "instance",
                         attributes: [
-                            { shaderLocation: 1, offset: 0, format: "float32x4" }, // color
-                            { shaderLocation: 2, offset: 16, format: "float32x2" }, // center
-                            { shaderLocation: 3, offset: 24, format: "float32" }, // radius
+                            {
+                                shaderLocation: 1,
+                                offset: 0,
+                                format: "float32x4",
+                            }, // color
+                            {
+                                shaderLocation: 2,
+                                offset: 16,
+                                format: "float32x2",
+                            }, // center
+                            {
+                                shaderLocation: 3,
+                                offset: 24,
+                                format: "float32",
+                            }, // radius
                         ],
                     },
                 ],

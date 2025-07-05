@@ -32,15 +32,33 @@ export default class NodeRenderer {
                 buffers: [
                     {
                         arrayStride: 8,
-                        attributes: [{ shaderLocation: 0, offset: 0, format: "float32x2" }],
+                        attributes: [
+                            {
+                                shaderLocation: 0,
+                                offset: 0,
+                                format: "float32x2",
+                            },
+                        ],
                     },
                     {
                         arrayStride: 48,
                         stepMode: "instance",
                         attributes: [
-                            { shaderLocation: 1, offset: 0, format: "float32x2" }, // position
-                            { shaderLocation: 2, offset: 8, format: "float32x2" }, // size
-                            { shaderLocation: 3, offset: 16, format: "float32x4" }, // color
+                            {
+                                shaderLocation: 1,
+                                offset: 0,
+                                format: "float32x2",
+                            }, // position
+                            {
+                                shaderLocation: 2,
+                                offset: 8,
+                                format: "float32x2",
+                            }, // size
+                            {
+                                shaderLocation: 3,
+                                offset: 16,
+                                format: "float32x4",
+                            }, // color
                         ],
                     },
                 ],
@@ -60,7 +78,9 @@ export default class NodeRenderer {
 
     sync(nodeArray: Node[]) {
         if (this.instanceBuffer == null) return;
+
         this.instanceCount = nodeArray.length;
+
         const instanceArray = new Float32Array(nodeArray.length * 12);
 
         nodeArray.forEach((node, i) => {
