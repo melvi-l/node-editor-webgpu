@@ -99,6 +99,13 @@ export default class HandleRenderer {
     }
 
     render(pass: GPURenderPassEncoder) {
+        if (
+            this.pipeline == null ||
+            this.vertexBuffer == null ||
+            this.instanceCount === 0
+        )
+            return;
+
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.context.viewport.bindGroup);
         pass.setVertexBuffer(0, this.vertexBuffer);

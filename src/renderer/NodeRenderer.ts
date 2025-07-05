@@ -73,7 +73,13 @@ export default class NodeRenderer {
     }
 
     render(pass: GPURenderPassEncoder) {
-        if (!this.pipeline || !this.vertexBuffer || !this.instanceBuffer) return;
+        if (
+            this.pipeline == null ||
+            this.vertexBuffer == null ||
+            this.instanceBuffer == null ||
+            this.instanceCount === 0
+        )
+            return;
 
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.context.viewport.bindGroup);
