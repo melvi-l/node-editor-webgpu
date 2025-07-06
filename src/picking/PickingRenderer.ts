@@ -4,7 +4,7 @@ import { RenderContext } from "@/renderer/type";
 
 import { PickingManager } from "./PickingManager";
 
-import { add, sub } from "@/utils/math";
+import { add, scale, sub, Vec2 } from "@/utils/math";
 
 export class PickingRenderer {
     private context: RenderContext;
@@ -89,6 +89,17 @@ export class PickingRenderer {
         const instanceData: number[] = [];
         let instanceCount = 0;
 
+        const nodeIterator = graph.getAllNode();
+        for (const node of nodeIterator) {
+            const id = this.picking.getOrCreateId(node.id);
+            const [r, g, b] = this.picking
+                .encodeIdToColor(id)
+                .map((v) => v / 255);
+
+            instanceData.push(...node.position, ...node.size, r, g, b, 0);
+            instanceCount++;
+        }
+
         const handleIterator = graph.getAllHandle(); // returns Iterable<Handle>
         for (const { nodeId, handle } of handleIterator) {
             const id = this.picking.getOrCreateId(handle.id);
@@ -105,21 +116,11 @@ export class PickingRenderer {
                 continue;
 
             const center = add(node.position, handle.position);
-            const position = sub(center, [handle.radius, handle.radius]);
-            const size = [handle.radius * 2, handle.radius * 2];
+            const radius = [handle.radius + 10, handle.radius + 10] as Vec2;
+            const position = sub(center, radius);
+            const size = scale(radius, 2);
 
             instanceData.push(...position, ...size, r, g, b, 0);
-            instanceCount++;
-        }
-
-        const nodeIterator = graph.getAllNode();
-        for (const node of nodeIterator) {
-            const id = this.picking.getOrCreateId(node.id);
-            const [r, g, b] = this.picking
-                .encodeIdToColor(id)
-                .map((v) => v / 255);
-
-            instanceData.push(...node.position, ...node.size, r, g, b, 0);
             instanceCount++;
         }
 

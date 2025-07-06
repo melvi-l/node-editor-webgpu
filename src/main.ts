@@ -71,6 +71,10 @@ async function main(...size: [number, number]) {
         type: "input",
         color: g2,
     });
+    graph.addHandle(b.id, {
+        type: "input",
+        color: g2,
+    });
     const e = graph.addEdge({
         source: { nodeId: a.id },
         target: { nodeId: b.id },
