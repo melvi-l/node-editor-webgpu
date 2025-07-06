@@ -30,3 +30,5 @@ export function computeMitter(dirA: Vec2, dirB: Vec2) {
 
     return { miter, miterFactor };
 }
+
+export type Vec4 = [number, number, number, number];

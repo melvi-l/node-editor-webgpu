@@ -22,54 +22,7 @@ async function main(...size: [number, number]) {
     const renderer = new Renderer(gpu);
     await renderer.init();
 
-    renderer.syncGraph({
-        nodes: [
-            {
-                position: [400, 300],
-                size: [100, 100],
-                color: [1, 0, 0, 1],
-            },
-            {
-                position: [200, 150],
-                size: [50, 100],
-                color: [0, 1, 0, 1],
-            },
-        ],
-        edges: [
-            {
-                color: [1, 0, 0, 1],
-                path: [
-                    [200, 100],
-                    [200, 200],
-                    [300, 200],
-                    [300, 300],
-                    [400, 300],
-                    [400, 400],
-                ],
-            },
-        ],
-        handles: [
-            {
-                position: [350, 250],
-                color: [1, 1, 1, 1],
-                radius: 2,
-            },
-            {
-                position: [450, 350],
-                color: [1, 1, 0, 1],
-                radius: 200,
-            },
-            {
-                position: [200, 150],
-                color: [0, 1, 1, 1],
-                radius: 10,
-            },
-            {
-                position: [800, 0],
-                color: [1, 0, 1, 1],
-            },
-        ],
-    });
+    // renderer.syncGraph()
 
     function frame() {
         renderer.render();
