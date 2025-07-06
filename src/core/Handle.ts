@@ -8,7 +8,7 @@ export type HandleType = "input" | "output";
 
 export type HandleArgs = { type: HandleType; color?: Vec4; radius?: number };
 
-export default class Handle {
+export default class Handle implements Hoverable, Selectable {
     id: string;
     type: HandleType;
     color: Vec4;
@@ -16,6 +16,9 @@ export default class Handle {
 
     // internally updated
     position?: Vec2;
+
+    isHovered: boolean = false;
+    isSelected: boolean = false;
 
     constructor({ type, color, radius }: HandleArgs) {
         this.id = id("handle");

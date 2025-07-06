@@ -2,6 +2,7 @@ import { Vec2 } from "@/utils/math";
 import Edge, { EdgeArgs } from "./Edge";
 import Handle, { HandleArgs } from "./Handle";
 import Node, { NodeArgs } from "./Node";
+import { getType } from "@/utils/id";
 
 export default class Graph {
     nodes = new Map<string, Node>();
@@ -113,6 +114,13 @@ export default class Graph {
     }
     getHandle(id: string): { handle: Handle; nodeId: string } | undefined {
         return this._handleRegistry.get(id);
+    }
+    getElement(id: string): Node | Edge | Handle | undefined {
+        const type = getType(id);
+        if (type === "node") return this.getNode(id);
+        if (type === "edge") return this.getEdge(id);
+        if (type === "handle") return this.getHandle(id)?.handle;
+        return undefined;
     }
     getAllNode(): MapIterator<Node> {
         return this.nodes.values();

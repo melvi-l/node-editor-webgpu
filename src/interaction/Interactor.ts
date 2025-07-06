@@ -12,7 +12,7 @@ type ToolEventMap = {
 };
 
 type PickingManager = {
-    pick: (x: number, y: number) => Promise<string>;
+    pick: (x: number, y: number) => Promise<string | null>;
 };
 
 export class Interactor {
@@ -65,7 +65,7 @@ export class Interactor {
         this.mouseMoved = false;
     }
 
-    async pick(): Promise<string> {
+    async pick(): Promise<string | null> {
         return this.picking.pick(...this.mousePosition);
     }
 

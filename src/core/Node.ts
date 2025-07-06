@@ -9,12 +9,16 @@ export type NodeArgs = {
     color?: Vec4;
     handles?: Handle[];
 };
-export default class Node {
+export default class Node implements Hoverable, Selectable {
     id: string;
     position: Vec2;
     size: Vec2;
     color: Vec4;
     handles: Handle[];
+
+    isHovered: boolean = false;
+    isSelected: boolean = false;
+
     constructor({ position, size, color, handles }: NodeArgs) {
         this.id = id("node");
         this.position = position;

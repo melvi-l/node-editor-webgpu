@@ -6,10 +6,32 @@ import { DragNodeTool } from "./DragNodeTool";
 import ConnectTool from "./ConnectTool";
 
 export default class BaseTool implements InteractionTool {
+    private hoveredId: string | null = null;
+
     constructor(
         private interactor: Interactor,
         private graph: Graph,
     ) { }
+
+    async update() {
+        const id = await this.interactor.pick();
+
+        if (id === null) {
+            this.hoveredId = null;
+            return;
+        }
+
+        if (id === this.hoveredId) return;
+
+        const element: Hoverable | undefined = this.graph.getElement(id);
+        if (element == null) {
+            console.warn(`Hovering an inexistant element ${id}`);
+            return;
+        }
+        element.isHovered = true;
+
+        this.hoveredId = id;
+    }
 
     async onPointerDown(e: PointerEvent) {
         const id = await this.interactor.pick();
