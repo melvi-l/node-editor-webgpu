@@ -1,4 +1,5 @@
 import { colorRGBA } from "@/utils/color";
+import { id } from "@/utils/id";
 import { Vec2, Vec4 } from "@/utils/math";
 
 const DEFAULT_RADIUS = 8;
@@ -17,7 +18,7 @@ export default class Handle {
     position?: Vec2;
 
     constructor({ type, color, radius }: HandleArgs) {
-        this.id = crypto.randomUUID();
+        this.id = id("handle");
         this.type = type;
         this.color = color ?? colorRGBA([160, 160, 160, 255]);
         this.radius = radius ?? DEFAULT_RADIUS;

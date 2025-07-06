@@ -1,5 +1,6 @@
 import { Vec4 } from "@/utils/math";
 import { colorRGBA } from "@/utils/color";
+import { id } from "@/utils/id";
 
 export type EdgeArgs = {
     source: {
@@ -27,7 +28,7 @@ export default class Edge {
     // path: Vec2[]; maybe I enable manual edge creation
 
     constructor({ source, target, color }: EdgeArgs) {
-        this.id = crypto.randomUUID();
+        this.id = id("edge");
         this.source = source;
         this.target = target;
         this.color = color ?? colorRGBA([255, 0, 84, 1]);

@@ -1,6 +1,7 @@
 import { Vec2, Vec4 } from "@/utils/math";
 import Handle from "./Handle";
 import { getColorFromUUID } from "@/utils/color";
+import { id } from "@/utils/id";
 
 export type NodeArgs = {
     position: Vec2;
@@ -15,7 +16,7 @@ export default class Node {
     color: Vec4;
     handles: Handle[];
     constructor({ position, size, color, handles }: NodeArgs) {
-        this.id = crypto.randomUUID();
+        this.id = id("node");
         this.position = position;
         this.size = size;
         this.color = color ?? getColorFromUUID(this.id);
