@@ -1,6 +1,6 @@
-import Edge from "./Edge";
-import Handle from "./Handle";
-import Node from "./Node";
+import Edge, { EdgeArgs } from "./Edge";
+import Handle, { HandleArgs } from "./Handle";
+import Node, { NodeArgs } from "./Node";
 
 export default class Graph {
     nodes = new Map<string, Node>();
@@ -14,6 +14,7 @@ export default class Graph {
 
     init(nodeArray: Node[], edgeArray: Edge[]) {
         this.nodes = new Map(nodeArray.map((node) => [node.id, node]));
+        this.nodes.forEach((node) => node.updateHandlesPosition());
         this.edges = new Map(edgeArray.map((edge) => [edge.id, edge]));
         this._handleRegistry.clear();
         this.nodes.forEach((node) =>
@@ -26,33 +27,40 @@ export default class Graph {
         );
     }
 
-    addNode(node: Node): Node {
-        if (this.nodes.has(node.id))
-            throw new Error(`Node ${node.id} already exists.`);
+    addNode(node: Node | NodeArgs): Node {
+        const _node = node instanceof Node ? node : new Node(node);
 
-        this.nodes.set(node.id, node);
-        return node;
-    }
-    addEdge(edge: Edge): Edge {
-        if (this.edges.has(edge.id))
-            throw new Error(`Edge ${edge.id} already exists.`);
+        if (this.nodes.has(_node.id))
+            throw new Error(`Node ${_node.id} already exists.`);
 
-        this.edges.set(edge.id, edge);
-        return edge;
+        this.nodes.set(_node.id, _node);
+        return _node;
     }
-    addHandle(nodeId: string, handle: Handle): Handle {
-        if (this._handleRegistry.has(handle.id))
-            throw new Error(`Edge ${handle.id} already exists.`);
+    addEdge(edge: Edge | EdgeArgs): Edge {
+        const _edge = edge instanceof Edge ? edge : new Edge(edge);
+
+        if (this.edges.has(_edge.id))
+            throw new Error(`Edge ${_edge.id} already exists.`);
+
+        this.edges.set(_edge.id, _edge);
+        return _edge;
+    }
+    addHandle(nodeId: string, handle: Handle | HandleArgs): Handle {
+        const _handle = handle instanceof Handle ? handle : new Handle(handle);
+
+        if (this._handleRegistry.has(_handle.id))
+            throw new Error(`Edge ${_handle.id} already exists.`);
 
         const node = this.getNode(nodeId);
         if (!node) throw new Error(`Node ${nodeId} not found`);
-        node.handles.push(handle);
+        node.handles.push(_handle);
+        node.updateHandlesPosition();
 
-        this._handleRegistry.set(handle.id, {
-            handle,
+        this._handleRegistry.set(_handle.id, {
+            handle: _handle,
             nodeId,
         });
-        return handle;
+        return _handle;
     }
 
     removeNode(nodeId: string) {
@@ -76,6 +84,7 @@ export default class Graph {
             );
             if (index === -1) break;
             node.handles.splice(index, 1);
+            node.updateHandlesPosition();
         }
         for (const edge of this.edges.values()) {
             if (
@@ -97,5 +106,13 @@ export default class Graph {
     getHandle(id: string): { handle: Handle; nodeId: string } | undefined {
         return this._handleRegistry.get(id);
     }
+    getAllNode(): MapIterator<Node> {
+        return this.nodes.values();
+    }
+    getAllEdge(): MapIterator<Edge> {
+        return this.edges.values();
+    }
+    getAllHandle(): MapIterator<{ handle: Handle; nodeId: string }> {
+        return this._handleRegistry.values();
+    }
 }
-

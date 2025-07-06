@@ -1,11 +1,12 @@
-import Handle from "@/core/Handle";
+import { Vec2, Vec4 } from "@/utils/math";
 import { RenderContext } from "./type";
 
-type HandleInstance = {
-    position: [number, number];
-    color: [number, number];
-    radius: number;
+export type HandleRender = {
+    position: Vec2;
+    color: Vec4;
+    radius?: number;
 };
+
 type HandleRendererOptions = {};
 export default class HandleRenderer {
     private context: RenderContext;
@@ -102,7 +103,7 @@ export default class HandleRenderer {
         );
     }
 
-    sync(handles: Handle[]) {
+    sync(handles: HandleRender[]) {
         this.instanceCount = handles.length;
 
         const instanceArray = new Float32Array(handles.length * 8); // 2+4 floats

@@ -1,9 +1,13 @@
-import Edge from "@/core/Edge";
 import { RenderContext, Uniform } from "./type";
-import { computeMitter, direction, normal, Vec2 } from "@/utils/math";
+import { computeMitter, direction, normal, Vec2, Vec4 } from "@/utils/math";
 
 type EdgeRendererOptions = {
     width: number;
+};
+
+export type EdgeRender = {
+    color: Vec4;
+    path: Vec2[];
 };
 
 // Instanciated (and triangle-stip) version of the stroke extension in vertex shader
@@ -18,7 +22,7 @@ export default class EdgeRenderer {
 
     constructor(
         context: RenderContext,
-        opts: EdgeRendererOptions = { width: 20 },
+        opts: EdgeRendererOptions = { width: 2 },
     ) {
         this.context = context;
         this.opts = opts;
@@ -131,7 +135,7 @@ export default class EdgeRenderer {
         );
     }
 
-    sync(edgeArray: Edge[]) {
+    sync(edgeArray: EdgeRender[]) {
         const instanceData: number[] = [];
 
         edgeArray.forEach((edge) => {
@@ -181,7 +185,6 @@ export default class EdgeRenderer {
                         lastMiter.miterFactor,
                         1,
                     );
-                    console.log(dirA, normal(dirA));
                     lastMiter = null; // clean
                 }
             }

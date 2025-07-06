@@ -1,14 +1,25 @@
+import { colorRGBA } from "@/utils/color";
 import { Vec2, Vec4 } from "@/utils/math";
+
+const DEFAULT_RADIUS = 8;
+
+export type HandleType = "input" | "output";
+
+export type HandleArgs = { type: HandleType; color?: Vec4; radius?: number };
 
 export default class Handle {
     id: string;
-    position: Vec2;
+    type: HandleType;
     color: Vec4;
     radius?: number;
 
-    constructor({ position, color }: { position: Vec2; color?: Vec4 }) {
+    // internally updated
+    position?: Vec2;
+
+    constructor({ type, color, radius }: HandleArgs) {
         this.id = crypto.randomUUID();
-        this.position = position;
-        this.color = color ?? [160, 160, 160, 160];
+        this.type = type;
+        this.color = color ?? colorRGBA([160, 160, 160, 255]);
+        this.radius = radius ?? DEFAULT_RADIUS;
     }
 }

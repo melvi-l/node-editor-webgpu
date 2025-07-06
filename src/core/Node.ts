@@ -1,46 +1,45 @@
 import { Vec2, Vec4 } from "@/utils/math";
 import Handle from "./Handle";
+import { getColorFromUUID } from "@/utils/color";
 
+export type NodeArgs = {
+    position: Vec2;
+    size: Vec2;
+    color?: Vec4;
+    handles?: Handle[];
+};
 export default class Node {
     id: string;
     position: Vec2;
     size: Vec2;
     color: Vec4;
     handles: Handle[];
-    constructor({
-        position,
-        size,
-        color,
-        handles,
-    }: {
-        position: Vec2;
-        size: Vec2;
-        color?: Vec4;
-        handles?: Handle[];
-    }) {
+    constructor({ position, size, color, handles }: NodeArgs) {
         this.id = crypto.randomUUID();
         this.position = position;
         this.size = size;
         this.color = color ?? getColorFromUUID(this.id);
         this.handles = handles ?? [];
     }
-}
 
-const colors: [number, number, number, number][] = [
-    [38, 70, 83, 255],
-    [42, 157, 143, 255],
-    [233, 196, 106, 255],
-    [244, 162, 97, 255],
-    [231, 111, 81, 255],
-];
+    updateHandlesPosition() {
+        const inputArray = this.handles.filter(
+            (handle) => handle.type === "input",
+        );
+        const outputArray = this.handles.filter(
+            (handle) => handle.type === "output",
+        );
 
-function getColorFromUUID(uuid: string): [number, number, number, number] {
-    let hash = 0;
-    for (let i = 0; i < uuid.length; i++) {
-        const code = uuid.charCodeAt(i);
-        hash = (hash * 31 + code) >>> 0;
+        const spacing =
+            this.size[1] /
+            (Math.max(inputArray.length, outputArray.length) + 1);
+
+        inputArray.forEach((handle, i) => {
+            handle.position = [0, spacing * (i + 1)];
+        });
+
+        outputArray.forEach((handle, i) => {
+            handle.position = [this.size[0], spacing * (i + 1)];
+        });
     }
-    const index = hash % colors.length;
-
-    return colors[index];
 }

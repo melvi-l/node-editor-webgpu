@@ -7,6 +7,9 @@ import ViewportUniform from "./ViewportUniform";
 import NodeRenderer from "./NodeRenderer";
 import HandleRenderer from "./HandleRenderer";
 import EdgeRenderer from "./EdgeRenderer";
+import { toNodeRenderArray } from "./adapter/nodeAdapter";
+import { toHandleRenderArray } from "./adapter/handleAdapter";
+import { toEdgeRenderArray } from "./adapter/edgeAdapter";
 
 export default class Renderer {
     private context: RenderContext;
@@ -44,9 +47,9 @@ export default class Renderer {
     }
 
     syncGraph(graph: Graph) {
-        this.nodeRenderer.sync(graph.nodes);
-        this.handleRenderer.sync(graph.handles);
-        this.edgeRenderer.sync(graph.edges);
+        this.nodeRenderer.sync(toNodeRenderArray(graph));
+        this.handleRenderer.sync(toHandleRenderArray(graph));
+        this.edgeRenderer.sync(toEdgeRenderArray(graph));
     }
 
     resize(size: ViewportSize) {

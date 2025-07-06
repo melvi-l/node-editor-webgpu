@@ -1,5 +1,11 @@
-import Node from "@/core/Node";
 import { RenderContext } from "./type";
+import { Vec2, Vec4 } from "@/utils/math";
+
+export type NodeRender = {
+    position: Vec2;
+    size: Vec2;
+    color: Vec4;
+};
 
 export default class NodeRenderer {
     private context: RenderContext;
@@ -76,7 +82,7 @@ export default class NodeRenderer {
         );
     }
 
-    sync(nodeArray: Node[]) {
+    sync(nodeArray: NodeRender[]) {
         if (this.instanceBuffer == null) return;
 
         this.instanceCount = nodeArray.length;
