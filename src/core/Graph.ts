@@ -1,3 +1,4 @@
+import { Vec2 } from "@/utils/math";
 import Edge, { EdgeArgs } from "./Edge";
 import Handle, { HandleArgs } from "./Handle";
 import Node, { NodeArgs } from "./Node";
@@ -10,7 +11,7 @@ export default class Graph {
         { handle: Handle; nodeId: string }
     >();
 
-    constructor() {}
+    constructor() { }
 
     init(nodeArray: Node[], edgeArray: Edge[]) {
         this.nodes = new Map(nodeArray.map((node) => [node.id, node]));
@@ -61,6 +62,13 @@ export default class Graph {
             nodeId,
         });
         return _handle;
+    }
+
+    moveNode(nodeId: string, newPosition: Vec2) {
+        const node = this.nodes.get(nodeId);
+        if (!node) throw new Error(`Node ${nodeId} not found`);
+        node.position = [...newPosition]; // might be in place later on
+        console.log(node.position);
     }
 
     removeNode(nodeId: string) {

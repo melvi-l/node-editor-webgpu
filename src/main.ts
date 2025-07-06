@@ -1,7 +1,8 @@
 import Graph from "@/core/Graph";
 import GPUResources from "@/renderer/GPUResources";
 import Renderer from "@/renderer/Renderer";
-import { colorHEX, colorRGBA } from "./utils/color";
+import { colorHEX } from "./utils/color";
+import { Interactor } from "./interaction/Interactor";
 
 async function main(...size: [number, number]) {
     if (!navigator.gpu) {
@@ -35,6 +36,7 @@ async function main(...size: [number, number]) {
         size: [200, 100],
         color: g0,
     });
+
     const ah = graph.addHandle(a.id, {
         type: "output",
         color: g2,
@@ -55,9 +57,16 @@ async function main(...size: [number, number]) {
         target: { nodeId: b.id },
     });
 
-    renderer.syncGraph(graph);
+    const interactor = new Interactor(
+        { pick: () => Promise.resolve(a.id) },
+        graph,
+        canvas,
+    );
+
 
     function frame() {
+        interactor.update();
+        renderer.syncGraph(graph);
         renderer.render();
         requestAnimationFrame(frame);
     }
