@@ -35,7 +35,10 @@ export class PickingManager {
         this.pickingTexture = this.context.gpu.device.createTexture({
             size: { width, height },
             format: "rgba8unorm",
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+            usage:
+                GPUTextureUsage.RENDER_ATTACHMENT |
+                GPUTextureUsage.COPY_SRC |
+                GPUTextureUsage.TEXTURE_BINDING, // debug
         });
 
         this.pickingView = this.pickingTexture.createView();
@@ -71,7 +74,7 @@ export class PickingManager {
                 colorAttachments: [
                     {
                         view: this.pickingView,
-                        clearValue: { r: 0, g: 0, b: 0, a: 1 },
+                        clearValue: { r: 0.2, g: 0, b: 0, a: 1 },
                         loadOp: "clear",
                         storeOp: "store",
                     },
@@ -110,5 +113,9 @@ export class PickingManager {
 
         const id = this.decodeColorToId(r, g, b);
         return this.reverseIdMap.get(id) ?? null;
+    }
+
+    get texture() {
+        return this.pickingTexture;
     }
 }

@@ -1,15 +1,17 @@
 import Graph from "@/core/Graph";
 
 import { RenderContext, ViewportSize } from "./type";
-import GPUResources from "./GPUResources";
-import ViewportUniform from "./ViewportUniform";
 
 import NodeRenderer from "./NodeRenderer";
-import HandleRenderer from "./HandleRenderer";
-import EdgeRenderer from "./EdgeRenderer";
 import { toNodeRenderArray } from "./adapter/nodeAdapter";
+
+import HandleRenderer from "./HandleRenderer";
 import { toHandleRenderArray } from "./adapter/handleAdapter";
+
+import EdgeRenderer from "./EdgeRenderer";
 import { toEdgeRenderArray } from "./adapter/edgeAdapter";
+
+import { DebugTextureRenderer } from "@/debug/DebugRenderer";
 
 export default class Renderer {
     private context: RenderContext;
@@ -18,11 +20,11 @@ export default class Renderer {
     private handleRenderer: HandleRenderer;
     private edgeRenderer: EdgeRenderer;
 
-    constructor(gpu: GPUResources) {
-        this.context = {
-            gpu,
-            viewport: new ViewportUniform(gpu, gpu.canvasSize),
-        };
+    private debugRenderer?: DebugTextureRenderer;
+
+    constructor(context: RenderContext, debugRenderer?: DebugTextureRenderer) {
+        this.context = context;
+        this.debugRenderer = debugRenderer;
         this.nodeRenderer = new NodeRenderer(this.context);
         this.handleRenderer = new HandleRenderer(this.context);
         this.edgeRenderer = new EdgeRenderer(this.context);
@@ -42,6 +44,10 @@ export default class Renderer {
         this.edgeRenderer.render(pass);
         this.nodeRenderer.render(pass);
         this.handleRenderer.render(pass);
+
+        if (this.debugRenderer != null) {
+            this.debugRenderer.render(pass);
+        }
 
         this.context.gpu.endFrame();
     }

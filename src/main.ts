@@ -5,6 +5,7 @@ import { colorHEX } from "./utils/color";
 import { Interactor } from "./interaction/Interactor";
 import ViewportUniform from "./renderer/ViewportUniform";
 import { PickingManager } from "./picking/PickingManager";
+import { DebugTextureRenderer } from "./debug/DebugRenderer";
 
 async function main(...size: [number, number]) {
     if (!navigator.gpu) {
@@ -33,7 +34,14 @@ async function main(...size: [number, number]) {
     const pickingManager = new PickingManager(context, graph);
     await pickingManager.init();
 
-    const renderer = new Renderer(context);
+    // Debug
+    let debugRenderer = undefined;
+    if (true) {
+        debugRenderer = new DebugTextureRenderer(context);
+        debugRenderer.init(pickingManager.texture);
+    }
+
+    const renderer = new Renderer(context, debugRenderer);
     await renderer.init();
 
     const interactor = new Interactor(pickingManager, graph, canvas);
@@ -56,7 +64,7 @@ async function main(...size: [number, number]) {
 
     const b = graph.addNode({
         position: [800, 600],
-        size: [200, 100],
+        size: [50, 100],
         color: g0,
     });
     const bh = graph.addHandle(b.id, {
@@ -68,8 +76,8 @@ async function main(...size: [number, number]) {
         target: { nodeId: b.id },
     });
 
-    function frame() {
-        interactor.update();
+    function frame(now: DOMHighResTimeStamp) {
+        interactor.update(now);
         renderer.syncGraph(graph);
         renderer.render();
         requestAnimationFrame(frame);
@@ -81,6 +89,7 @@ async function main(...size: [number, number]) {
             width: window.innerWidth,
             height: window.innerHeight,
         });
+        pickingManager.resize();
     });
 }
 
