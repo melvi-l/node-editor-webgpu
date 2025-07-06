@@ -3,6 +3,8 @@ import GPUResources from "@/renderer/GPUResources";
 import Renderer from "@/renderer/Renderer";
 import { colorHEX } from "./utils/color";
 import { Interactor } from "./interaction/Interactor";
+import ViewportUniform from "./renderer/ViewportUniform";
+import { PickingManager } from "./picking/PickingManager";
 
 async function main(...size: [number, number]) {
     if (!navigator.gpu) {
@@ -22,10 +24,19 @@ async function main(...size: [number, number]) {
     const gpu = new GPUResources(canvas);
     await gpu.init();
 
-    const renderer = new Renderer(gpu);
+    const context = {
+        gpu,
+        viewport: new ViewportUniform(gpu, gpu.canvasSize),
+    };
+    const graph = new Graph();
+
+    const pickingManager = new PickingManager(context, graph);
+    await pickingManager.init();
+
+    const renderer = new Renderer(context);
     await renderer.init();
 
-    const graph = new Graph();
+    const interactor = new Interactor(pickingManager, graph, canvas);
 
     const g0 = colorHEX("#555");
     const g1 = colorHEX("#777");
@@ -56,13 +67,6 @@ async function main(...size: [number, number]) {
         source: { nodeId: a.id },
         target: { nodeId: b.id },
     });
-
-    const interactor = new Interactor(
-        { pick: () => Promise.resolve(a.id) },
-        graph,
-        canvas,
-    );
-
 
     function frame() {
         interactor.update();

@@ -34,20 +34,17 @@ export default class BaseTool implements InteractionTool {
     }
 
     async onPointerDown(e: PointerEvent) {
-        const id = await this.interactor.pick();
-        console.log(id);
+        if (!this.hoveredId) return;
 
-        if (!id) return;
-
-        const type = getType(id);
+        const type = getType(this.hoveredId);
 
         if (type === "node") {
             this.interactor.setTool(
-                new DragNodeTool(this.interactor, this.graph, id),
+                new DragNodeTool(this.interactor, this.graph, this.hoveredId),
             );
         } else if (type === "handle") {
             this.interactor.setTool(
-                new ConnectTool(this.interactor, this.graph, id),
+                new ConnectTool(this.interactor, this.graph, this.hoveredId),
             );
         } else {
             return;

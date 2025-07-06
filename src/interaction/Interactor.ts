@@ -3,6 +3,8 @@ import { InteractionTool } from "./Tool";
 import { Vec2 } from "@/utils/math";
 import BaseTool from "./tools/BaseTool";
 
+const UPDATE_INTERVAL = 1000 / 60;
+
 type ToolEventMap = {
     onPointerDown: PointerEvent;
     onPointerMove: PointerEvent;
@@ -58,12 +60,18 @@ export class Interactor {
         window.addEventListener("wheel", (e) => this.currentTool?.onWheel?.(e));
     }
 
-    async update() {
-        if (!this.mouseMoved) return;
-        this.currentTool?.update?.();
+    update = (() => {
+        let lastUpdate = 0;
+        return async (now: number) => {
+            if (now - lastUpdate < UPDATE_INTERVAL) return;
+            lastUpdate = now;
 
-        this.mouseMoved = false;
-    }
+            if (!this.mouseMoved) return;
+            this.currentTool?.update?.();
+
+            this.mouseMoved = false;
+        };
+    })();
 
     async pick(): Promise<string | null> {
         return this.picking.pick(...this.mousePosition);
