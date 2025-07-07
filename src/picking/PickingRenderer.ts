@@ -116,7 +116,7 @@ export class PickingRenderer {
                 continue;
 
             const center = add(node.position, handle.position);
-            const radius = [handle.radius + 10, handle.radius + 10] as Vec2;
+            const radius = [handle.radius + 2, handle.radius + 2] as Vec2;
             const position = sub(center, radius);
             const size = scale(radius, 2);
 

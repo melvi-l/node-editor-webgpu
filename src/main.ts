@@ -36,7 +36,7 @@ async function main(...size: [number, number]) {
 
     // Debug
     let debugRenderer = undefined;
-    if (true) {
+    if (false) {
         debugRenderer = new DebugTextureRenderer(context);
         debugRenderer.init(pickingManager.texture);
     }
