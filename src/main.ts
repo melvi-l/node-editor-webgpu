@@ -3,7 +3,7 @@ import GPUResources from "@/renderer/GPUResources";
 import Renderer from "@/renderer/Renderer";
 import { colorHEX } from "./utils/color";
 import { Interactor } from "./interaction/Interactor";
-import ViewportUniform from "./renderer/ViewportUniform";
+import Viewport from "./renderer/Viewport";
 import { PickingManager } from "./picking/PickingManager";
 import { DebugTextureRenderer } from "./debug/DebugRenderer";
 
@@ -27,7 +27,7 @@ async function main(...size: [number, number]) {
 
     const context = {
         gpu,
-        viewport: new ViewportUniform(gpu, gpu.canvasSize),
+        viewport: new Viewport(gpu, gpu.canvasSize),
     };
     const graph = new Graph();
 

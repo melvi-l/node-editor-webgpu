@@ -1,5 +1,5 @@
 import GPUResources from "./GPUResources";
-import ViewportUniform from "./ViewportUniform";
+import Viewport from "./Viewport";
 
 export interface ViewportSize {
     width: number;
@@ -8,8 +8,9 @@ export interface ViewportSize {
 
 export interface RenderContext {
     gpu: GPUResources;
-    viewport: ViewportUniform;
+    viewport: Viewport;
 }
+
 export interface Uniform {
     buffer: GPUBuffer;
     bindGroup: GPUBindGroup;
