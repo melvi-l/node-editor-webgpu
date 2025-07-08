@@ -100,10 +100,16 @@ export class Interactor {
     }
 
     // State
-    setHovered(hoveredId: string) {
+    get hoveredId(): Readonly<string | null> {
+        return this.context.state.hoveredId;
+    }
+    get selectedId(): Readonly<string | null> {
+        return this.context.state.selectedId;
+    }
+    setHoveredId(hoveredId: string | null) {
         this.context.state.hoveredId = hoveredId;
     }
-    setSelected(selectedId: string) {
+    setSelectedId(selectedId: string | null) {
         this.context.state.selectedId = selectedId;
     }
 }

@@ -6,8 +6,6 @@ import { DragNodeTool } from "./DragNodeTool";
 import ConnectTool from "./ConnectTool";
 
 export default class BaseTool implements InteractionTool {
-    private hoveredId: string | null = null;
-
     constructor(
         private interactor: Interactor,
         private graph: Graph,
@@ -16,35 +14,31 @@ export default class BaseTool implements InteractionTool {
     async update() {
         const id = await this.interactor.pick();
 
-        if (id === null) {
-            this.hoveredId = null;
-            return;
-        }
+        if (id === this.interactor.hoveredId) return;
 
-        if (id === this.hoveredId) return;
-
-        const element: Hoverable | undefined = this.graph.getElement(id);
-        if (element == null) {
-            console.warn(`Hovering an inexistant element ${id}`);
-            return;
-        }
-        element.isHovered = true;
-
-        this.hoveredId = id;
+        this.interactor.setHoveredId(id);
     }
 
     async onPointerDown(e: PointerEvent) {
-        if (!this.hoveredId) return;
+        if (!this.interactor.hoveredId) return;
 
-        const type = getType(this.hoveredId);
+        const type = getType(this.interactor.hoveredId);
 
         if (type === "node") {
             this.interactor.setTool(
-                new DragNodeTool(this.interactor, this.graph, this.hoveredId),
+                new DragNodeTool(
+                    this.interactor,
+                    this.graph,
+                    this.interactor.hoveredId,
+                ),
             );
         } else if (type === "handle") {
             this.interactor.setTool(
-                new ConnectTool(this.interactor, this.graph, this.hoveredId),
+                new ConnectTool(
+                    this.interactor,
+                    this.graph,
+                    this.interactor.hoveredId,
+                ),
             );
         } else {
             return;

@@ -27,7 +27,9 @@ export class DragNodeTool implements InteractionTool {
         this.graph.moveNode(this.nodeId, newPos);
     }
 
-    onPointerUp() {
+    onPointerUp(event: PointerEvent) {
         this.interactor.setTool?.(new BaseTool(this.interactor, this.graph));
+        // forward if selected after a drag
+        // this.interactor.forwardEventToTool("onPointerUp", event);
     }
 }
