@@ -11,7 +11,7 @@ export default class BaseTool implements InteractionTool {
     constructor(
         private interactor: Interactor,
         private graph: Graph,
-    ) { }
+    ) {}
 
     async update() {
         const id = await this.interactor.pick();
