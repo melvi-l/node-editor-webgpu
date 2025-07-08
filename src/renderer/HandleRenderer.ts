@@ -2,9 +2,10 @@ import { Vec2, Vec4 } from "@/utils/math";
 import { RenderContext } from "./type";
 
 export type HandleRender = {
+    id: string;
     position: Vec2;
     color: Vec4;
-    radius?: number;
+    radius: number;
 };
 
 type HandleRendererOptions = {};

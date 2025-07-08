@@ -81,7 +81,8 @@ export class PickingManager {
                 ],
             });
 
-            this.renderer.render(this.graph, pass);
+            this.renderer.sync(this.graph);
+            this.renderer.render(pass);
             pass.end();
         }
 

@@ -6,6 +6,7 @@ type EdgeRendererOptions = {
 };
 
 export type EdgeRender = {
+    id: string;
     color: Vec4;
     path: Vec2[];
 };

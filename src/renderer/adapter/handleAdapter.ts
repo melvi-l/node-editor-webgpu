@@ -6,20 +6,21 @@ import { HandleRender } from "../HandleRenderer";
 import { add, Vec2 } from "@/utils/math";
 
 function toHandleRender(
-    handle: Handle,
+    { id, position, color, radius }: Handle,
     nodePosition: Vec2,
 ): HandleRender | null {
-    if (handle.position == null) {
+    if (position == null) {
         console.warn(
-            `Unable to adapt for render handle ${handle.id}. Handle position should be compute before rendering`,
+            `Unable to adapt for render handle ${id}. Handle position should be compute before rendering`,
         );
         return null;
     }
 
     return {
-        position: add(nodePosition, handle.position),
-        color: handle.color,
-        radius: handle.radius,
+        id,
+        position: add(nodePosition, position),
+        color,
+        radius,
     };
 }
 export function toHandleRenderArray(graph: Graph): HandleRender[] {

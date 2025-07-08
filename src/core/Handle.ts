@@ -12,7 +12,7 @@ export default class Handle implements Hoverable, Selectable {
     id: string;
     type: HandleType;
     color: Vec4;
-    radius?: number;
+    radius: number;
 
     // internally updated
     position?: Vec2;

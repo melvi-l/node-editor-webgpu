@@ -5,6 +5,8 @@ import { RenderContext } from "@/renderer/type";
 import { PickingManager } from "./PickingManager";
 
 import { add, scale, sub, Vec2 } from "@/utils/math";
+import { toNodeRenderArray } from "@/renderer/adapter/nodeAdapter";
+import { toHandleRenderArray } from "@/renderer/adapter/handleAdapter";
 
 export class PickingRenderer {
     private context: RenderContext;
@@ -85,12 +87,11 @@ export class PickingRenderer {
         );
     }
 
-    render(graph: Graph, pass: GPURenderPassEncoder) {
+    sync(graph: Graph) {
         const instanceData: number[] = [];
         let instanceCount = 0;
 
-        const nodeIterator = graph.getAllNode();
-        for (const node of nodeIterator) {
+        toNodeRenderArray(graph).forEach((node) => {
             const id = this.picking.getOrCreateId(node.id);
             const [r, g, b] = this.picking
                 .encodeIdToColor(id)
@@ -98,39 +99,30 @@ export class PickingRenderer {
 
             instanceData.push(...node.position, ...node.size, r, g, b, 0);
             instanceCount++;
-        }
+        });
+        toHandleRenderArray(graph).forEach(
+            ({ id: uId, position: center, radius }) => {
+                const id = this.picking.getOrCreateId(uId);
+                const [r, g, b] = this.picking
+                    .encodeIdToColor(id)
+                    .map((v) => v / 255);
 
-        const handleIterator = graph.getAllHandle(); // returns Iterable<Handle>
-        for (const { nodeId, handle } of handleIterator) {
-            const id = this.picking.getOrCreateId(handle.id);
-            const [r, g, b] = this.picking
-                .encodeIdToColor(id)
-                .map((v) => v / 255);
+                const demiSize = [radius + 2, radius + 2] as Vec2;
+                const position = sub(center, demiSize);
+                const size = scale(demiSize, 2);
 
-            const node = graph.getNode(nodeId);
-            if (
-                node == null ||
-                handle.position == null ||
-                handle.radius == null
-            )
-                continue;
-
-            const center = add(node.position, handle.position);
-            const radius = [handle.radius + 2, handle.radius + 2] as Vec2;
-            const position = sub(center, radius);
-            const size = scale(radius, 2);
-
-            instanceData.push(...position, ...size, r, g, b, 0);
-            instanceCount++;
-        }
-
-        // TODO: edge
+                instanceData.push(...position, ...size, r, g, b, 0);
+                instanceCount++;
+            },
+        );
 
         this.instanceCount = instanceCount;
 
         const instanceArray = new Float32Array(instanceData);
         this.context.gpu.updateBuffer(this.instanceBuffer, instanceArray);
+    }
 
+    render(pass: GPURenderPassEncoder) {
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.context.viewport.bindGroup);
         pass.setVertexBuffer(0, this.vertexBuffer);

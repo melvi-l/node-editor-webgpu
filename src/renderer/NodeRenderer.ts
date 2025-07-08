@@ -2,6 +2,7 @@ import { RenderContext } from "./type";
 import { Vec2, Vec4 } from "@/utils/math";
 
 export type NodeRender = {
+    id: string;
     position: Vec2;
     size: Vec2;
     color: Vec4;

@@ -5,9 +5,10 @@ import { EdgeRender } from "../EdgeRenderer";
 
 import { add, scale, Vec2 } from "@/utils/math";
 
-function toEdgeRender(graph: Graph, edge: Edge): EdgeRender | null {
-    const { source, target, color } = edge;
-
+function toEdgeRender(
+    graph: Graph,
+    { id, source, target, color }: Edge,
+): EdgeRender | null {
     // Source
     const sourceNode = graph.getNode(source.nodeId);
     const sourceHandle =
@@ -17,13 +18,13 @@ function toEdgeRender(graph: Graph, edge: Edge): EdgeRender | null {
 
     if (sourceHandle == null || sourceNode == null) {
         console.warn(
-            `Edge ${edge.id} referenced an unexistant ${sourceHandle == null ? "source handle" : "source node"}`,
+            `Edge ${id} referenced an unexistant ${sourceHandle == null ? "source handle" : "source node"}`,
         );
         return null;
     }
     if (sourceHandle.position == null) {
         console.warn(
-            `Unable to adapt for render edge ${edge.id} source handle ${sourceHandle.id}. Handle position should be compute before rendering`,
+            `Unable to adapt for render edge ${id} source handle ${sourceHandle.id}. Handle position should be compute before rendering`,
         );
         return null;
     }
@@ -39,13 +40,13 @@ function toEdgeRender(graph: Graph, edge: Edge): EdgeRender | null {
 
     if (targetHandle == null || targetNode == null) {
         console.warn(
-            `Edge ${edge.id} referenced an unexistant ${target == null ? "target handle" : "target node"}`,
+            `Edge ${id} referenced an unexistant ${target == null ? "target handle" : "target node"}`,
         );
         return null;
     }
     if (targetHandle.position == null) {
         console.warn(
-            `Unable to adapt for render edge ${edge.id} target handle ${sourceHandle.id}. Handle position should be compute before rendering`,
+            `Unable to adapt for render edge ${id} target handle ${sourceHandle.id}. Handle position should be compute before rendering`,
         );
         return null;
     }
@@ -56,6 +57,7 @@ function toEdgeRender(graph: Graph, edge: Edge): EdgeRender | null {
     const path: Vec2[] = [start, [mid[0], start[1]], [mid[0], end[1]], end];
 
     return {
+        id,
         path,
         color,
     };
