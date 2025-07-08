@@ -80,6 +80,22 @@ export default class GPUResources {
         this.device.queue.writeBuffer(buffer, 0, data);
     }
 
+    updateSubBuffer(
+        buffer: GPUBuffer,
+        bufferOffset: GPUSize64,
+        data: GPUAllowSharedBufferSource,
+        dataOffset: GPUSize64,
+        size: GPUSize64,
+    ): void {
+        this.device.queue.writeBuffer(
+            buffer,
+            bufferOffset,
+            data,
+            dataOffset,
+            size,
+        );
+    }
+
     createRenderPipeline({
         vertex,
         fragment,

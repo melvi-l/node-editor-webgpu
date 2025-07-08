@@ -1,5 +1,9 @@
+import Graph from "@/core/Graph";
 import { RenderContext } from "./type";
 import { Vec2, Vec4 } from "@/utils/math";
+import { ResizableFloat32Array } from "./ResizableFloat32Array";
+
+const bufferSize = 32 * 1_000_000; // instanceSize * maxInstanceCount
 
 export type NodeRender = {
     id: string;
@@ -14,6 +18,8 @@ export default class NodeRenderer {
     private instanceBuffer!: GPUBuffer;
     private vertexBuffer!: GPUBuffer;
     private instanceCount = 0;
+    private idToIndex = new Map<string, number>();
+    private instanceArray = new ResizableFloat32Array();
 
     constructor(context: RenderContext) {
         this.context = context;
@@ -48,7 +54,7 @@ export default class NodeRenderer {
                         ],
                     },
                     {
-                        arrayStride: 48,
+                        arrayStride: 32,
                         stepMode: "instance",
                         attributes: [
                             {
@@ -78,25 +84,73 @@ export default class NodeRenderer {
         });
 
         this.instanceBuffer = this.context.gpu.initBuffer(
-            1024 * 64, // 64 KB
+            bufferSize,
             GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         );
     }
 
-    sync(nodeArray: NodeRender[]) {
+    sync(graph: Graph) {
         if (this.instanceBuffer == null) return;
 
-        this.instanceCount = nodeArray.length;
+        this.instanceCount = graph.nodes.size;
 
-        const instanceArray = new Float32Array(nodeArray.length * 12);
+        this.instanceArray.ensureCapacity(this.instanceCount * 8);
+        const array = this.instanceArray.data;
+        this.idToIndex.clear();
 
-        nodeArray.forEach((node, i) => {
-            instanceArray.set(node.position, i * 12 + 0);
-            instanceArray.set(node.size, i * 12 + 2);
-            instanceArray.set(node.color, i * 12 + 4);
-        });
+        let i = 0;
+        for (const node of graph.getAllNode()) {
+            this.idToIndex.set(node.id, i);
 
-        this.context.gpu.updateBuffer(this.instanceBuffer, instanceArray);
+            const base = i * 8;
+            array.set(node.position, base + 0);
+            array.set(node.size, base + 2);
+            array.set(node.color, base + 4);
+            i++;
+        }
+
+        const slice = this.instanceArray.used;
+
+        this.context.gpu.updateSubBuffer(
+            this.instanceBuffer,
+            0,
+            slice.buffer,
+            slice.byteOffset,
+            slice.byteLength,
+        );
+    }
+
+    syncPartial(graph: Graph) {
+        const dirtyNodeIdSet = graph.dirty.nodes;
+
+        if (dirtyNodeIdSet.size === 0) return;
+
+        for (const nodeId of dirtyNodeIdSet) {
+            const index = this.idToIndex.get(nodeId);
+            if (index == null) continue;
+
+            const node = graph.getNode(nodeId);
+            if (node == null) continue;
+
+            const array = this.instanceArray.data;
+
+            const base = index * 8;
+            array.set(node.position, base + 0);
+            array.set(node.size, base + 2);
+            array.set(node.color, base + 4);
+
+            const dataSlice = array.subarray(base, base + 8);
+
+            this.context.gpu.updateSubBuffer(
+                this.instanceBuffer,
+                index * 32,
+                dataSlice.buffer,
+                dataSlice.byteOffset,
+                dataSlice.byteLength,
+            );
+        }
+
+        graph.dirty.nodes.clear();
     }
 
     render(pass: GPURenderPassEncoder) {

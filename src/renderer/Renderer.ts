@@ -53,9 +53,17 @@ export default class Renderer {
     }
 
     syncGraph(graph: Graph) {
-        this.nodeRenderer.sync(toNodeRenderArray(graph));
+        if (graph.dirty.global === false) {
+            this.nodeRenderer.syncPartial(graph);
+            // this.handleRenderer.syncPartial(graph)
+            // this.edgeRenderer.syncPartial(graph)
+            return;
+        }
+        this.nodeRenderer.sync(graph);
         this.handleRenderer.sync(toHandleRenderArray(graph));
         this.edgeRenderer.sync(toEdgeRenderArray(graph));
+
+        graph.dirty.global = false;
     }
 
     resize(size: ViewportSize) {

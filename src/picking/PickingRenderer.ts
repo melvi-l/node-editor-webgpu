@@ -5,7 +5,6 @@ import { RenderContext } from "@/renderer/type";
 import { PickingManager } from "./PickingManager";
 
 import { add, scale, sub, Vec2 } from "@/utils/math";
-import { toNodeRenderArray } from "@/renderer/adapter/nodeAdapter";
 import { toHandleRenderArray } from "@/renderer/adapter/handleAdapter";
 
 export class PickingRenderer {
@@ -91,7 +90,7 @@ export class PickingRenderer {
         const instanceData: number[] = [];
         let instanceCount = 0;
 
-        toNodeRenderArray(graph).forEach((node) => {
+        for (const node of graph.getAllNode()) {
             const id = this.picking.getOrCreateId(node.id);
             const [r, g, b] = this.picking
                 .encodeIdToColor(id)
@@ -99,7 +98,7 @@ export class PickingRenderer {
 
             instanceData.push(...node.position, ...node.size, r, g, b, 0);
             instanceCount++;
-        });
+        }
         toHandleRenderArray(graph).forEach(
             ({ id: uId, position: center, radius }) => {
                 const id = this.picking.getOrCreateId(uId);
