@@ -2,6 +2,7 @@ import Graph from "@/core/Graph";
 import { InteractionTool } from "./Tool";
 import { Vec2 } from "@/utils/math";
 import BaseTool from "./tools/BaseTool";
+import { RenderContext } from "@/renderer/type";
 
 const UPDATE_INTERVAL = 1000 / 60;
 
@@ -18,38 +19,38 @@ type PickingManager = {
 };
 
 export class Interactor {
-    private canvas: HTMLCanvasElement;
     private picking: PickingManager;
     private graph: Graph;
+    private context: RenderContext;
+
     private currentTool: InteractionTool;
+
     private _mousePosition: Vec2 = [0, 0];
     private mouseMoved = false;
 
-    constructor(
-        picking: PickingManager,
-        graph: Graph,
-        canvas: HTMLCanvasElement,
-    ) {
+    constructor(picking: PickingManager, graph: Graph, context: RenderContext) {
         this.picking = picking;
         this.graph = graph;
-        this.canvas = canvas;
+        this.context = context;
+
         this.currentTool = new BaseTool(this, this.graph);
 
         this.initEvents();
     }
 
     private initEvents() {
-        this.canvas.addEventListener("pointermove", (e) => {
-            const rect = this.canvas.getBoundingClientRect();
+        const canvas = this.context.gpu.canvas;
+        canvas.addEventListener("pointermove", (e) => {
+            const rect = canvas.getBoundingClientRect();
             this._mousePosition = [e.clientX - rect.left, e.clientY - rect.top];
 
             this.mouseMoved = true;
             this.currentTool?.onPointerMove?.(e);
         });
-        this.canvas.addEventListener("pointerdown", (e) =>
+        canvas.addEventListener("pointerdown", (e) =>
             this.currentTool?.onPointerDown?.(e),
         );
-        this.canvas.addEventListener("pointerup", (e) =>
+        canvas.addEventListener("pointerup", (e) =>
             this.currentTool?.onPointerUp?.(e),
         );
 
@@ -81,10 +82,10 @@ export class Interactor {
         return this._mousePosition;
     }
 
+    // Tool
     setTool(tool: InteractionTool) {
         this.currentTool = tool;
     }
-
     forwardEventToTool<K extends keyof ToolEventMap>(
         method: K,
         event: ToolEventMap[K],
@@ -94,8 +95,15 @@ export class Interactor {
             | undefined;
         fn?.call(this.currentTool, event);
     }
-
     resetTool() {
         this.currentTool = new BaseTool(this, this.graph);
+    }
+
+    // State
+    setHovered(hoveredId: string) {
+        this.context.state.hoveredId = hoveredId;
+    }
+    setSelected(selectedId: string) {
+        this.context.state.selectedId = selectedId;
     }
 }

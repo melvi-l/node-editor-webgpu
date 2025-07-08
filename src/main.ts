@@ -28,6 +28,7 @@ async function main(...size: [number, number]) {
     const context = {
         gpu,
         viewport: new Viewport(gpu, gpu.canvasSize),
+        state: { hoveredId: null, selectedId: null },
     };
     const graph = new Graph();
 
@@ -44,7 +45,7 @@ async function main(...size: [number, number]) {
     const renderer = new Renderer(context, debugRenderer);
     await renderer.init();
 
-    const interactor = new Interactor(pickingManager, graph, canvas);
+    const interactor = new Interactor(pickingManager, graph, context);
 
     const g0 = colorHEX("#555");
     const g1 = colorHEX("#777");

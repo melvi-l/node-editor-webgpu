@@ -9,6 +9,12 @@ export interface ViewportSize {
 export interface RenderContext {
     gpu: GPUResources;
     viewport: Viewport;
+    state: RenderState;
+}
+
+export interface RenderState {
+    hoveredId: string | null;
+    selectedId: string | null;
 }
 
 export interface Uniform {
