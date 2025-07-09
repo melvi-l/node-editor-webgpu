@@ -43,7 +43,6 @@ export default class Renderer {
 
         this.edgeRenderer.render(pass);
         this.nodeRenderer.render(pass);
-        this.handleRenderer.render(pass);
 
         if (this.debugRenderer != null) {
             this.debugRenderer.render(pass);
@@ -55,12 +54,10 @@ export default class Renderer {
     syncGraph(graph: Graph) {
         if (graph.dirty.global === false) {
             this.nodeRenderer.syncPartial(graph);
-            // this.handleRenderer.syncPartial(graph)
-            // this.edgeRenderer.syncPartial(graph)
+            this.edgeRenderer.sync(toEdgeRenderArray(graph));
             return;
         }
         this.nodeRenderer.sync(graph);
-        this.handleRenderer.sync(toHandleRenderArray(graph));
         this.edgeRenderer.sync(toEdgeRenderArray(graph));
 
         graph.dirty.global = false;

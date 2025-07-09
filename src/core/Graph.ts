@@ -152,6 +152,15 @@ export default class Graph {
         if (type === "handle") return this.getHandle(id)?.handle;
         return undefined;
     }
+    get nodeCount(): number {
+        return this.nodes.size;
+    }
+    get edgeCount(): number {
+        return this.edges.size;
+    }
+    get handleCount(): number {
+        return this._handleRegistry.size;
+    }
     getAllNode(): MapIterator<Node> {
         return this.nodes.values();
     }

@@ -1,39 +1,34 @@
 import Graph from "@/core/Graph";
 import { RenderContext } from "./type";
-import { Vec2, Vec4 } from "@/utils/math";
+import { Vec2, Vec4, add } from "@/utils/math";
 import { ResizableFloat32Array } from "./ResizableFloat32Array";
 
 const bufferSize = 32 * 1_000_000; // instanceSize * maxInstanceCount
 
-export type NodeRender = {
-    id: string;
-    position: Vec2;
-    size: Vec2;
-    color: Vec4;
-};
-
 export default class NodeRenderer {
     private context: RenderContext;
     private pipeline!: GPURenderPipeline;
-    private instanceBuffer!: GPUBuffer;
     private vertexBuffer!: GPUBuffer;
+    private instanceBuffer!: GPUBuffer;
     private instanceCount = 0;
-    private idToIndex = new Map<string, number>();
     private instanceArray = new ResizableFloat32Array();
+    private idToIndex = new Map<string, number>();
 
     constructor(context: RenderContext) {
         this.context = context;
     }
 
     async init() {
-        const vertices = new Float32Array([0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1]);
+        const quadVertices = new Float32Array([
+            -1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1,
+        ]);
 
         this.vertexBuffer = this.context.gpu.createBuffer(
-            vertices,
+            quadVertices,
             GPUBufferUsage.VERTEX,
         );
 
-        const shader = await this.context.gpu.loadShaderModule("node");
+        const shader = await this.context.gpu.loadShaderModule("unified");
 
         this.pipeline = this.context.gpu.createRenderPipeline({
             layout: this.context.gpu.device.createPipelineLayout({
@@ -54,7 +49,7 @@ export default class NodeRenderer {
                         ],
                     },
                     {
-                        arrayStride: 32,
+                        arrayStride: 36,
                         stepMode: "instance",
                         attributes: [
                             {
@@ -66,12 +61,13 @@ export default class NodeRenderer {
                                 shaderLocation: 2,
                                 offset: 8,
                                 format: "float32x2",
-                            }, // size
+                            }, // size or radius
                             {
                                 shaderLocation: 3,
                                 offset: 16,
                                 format: "float32x4",
                             }, // color
+                            { shaderLocation: 4, offset: 32, format: "uint32" }, // kind
                         ],
                     },
                 ],
@@ -79,7 +75,23 @@ export default class NodeRenderer {
             fragment: {
                 module: shader,
                 entryPoint: "fs_main",
-                targets: [{ format: this.context.gpu.format }],
+                targets: [
+                    {
+                        format: this.context.gpu.format,
+                        blend: {
+                            color: {
+                                srcFactor: "src-alpha",
+                                dstFactor: "one-minus-src-alpha",
+                                operation: "add",
+                            },
+                            alpha: {
+                                srcFactor: "one",
+                                dstFactor: "one-minus-src-alpha",
+                                operation: "add",
+                            },
+                        },
+                    },
+                ],
             },
         });
 
@@ -90,28 +102,42 @@ export default class NodeRenderer {
     }
 
     sync(graph: Graph) {
-        if (this.instanceBuffer == null) return;
+        this.instanceCount = 0;
+        this.instanceArray.ensureCapacity(
+            (graph.nodeCount + graph.handleCount + graph.edgeCount) * 9 * 10,
+        );
 
-        this.instanceCount = graph.nodes.size;
-
-        this.instanceArray.ensureCapacity(this.instanceCount * 8);
         const array = this.instanceArray.data;
         this.idToIndex.clear();
-
         let i = 0;
+
         for (const node of graph.getAllNode()) {
             this.idToIndex.set(node.id, i);
 
-            const base = i * 8;
+            const base = i * 9;
             array.set(node.position, base + 0);
             array.set(node.size, base + 2);
             array.set(node.color, base + 4);
+            array[base + 8] = 0; // kind = node
             i++;
+
+            for (const handle of node.handles) {
+                if (!handle.position) continue;
+                const hbase = i * 9;
+                const worldPosition = add(node.position, handle.position);
+
+                array.set(worldPosition, hbase + 0);
+                array.set([handle.radius, 0], hbase + 2);
+                array.set(handle.color, hbase + 4);
+                array[hbase + 8] = 1; // kind = handle
+                i++;
+            }
         }
 
-        const slice = this.instanceArray.used;
+        this.instanceCount = i;
 
-        this.context.gpu.updateSubBuffer(
+        const slice = this.instanceArray.used;
+        this.context.gpu.device.queue.writeBuffer(
             this.instanceBuffer,
             0,
             slice.buffer,
@@ -121,46 +147,61 @@ export default class NodeRenderer {
     }
 
     syncPartial(graph: Graph) {
-        const dirtyNodeIdSet = graph.dirty.nodes;
+        const dirtyNodeIds = graph.dirty.nodes;
+        if (dirtyNodeIds.size === 0) return;
 
-        if (dirtyNodeIdSet.size === 0) return;
+        const array = this.instanceArray.data;
 
-        for (const nodeId of dirtyNodeIdSet) {
-            const index = this.idToIndex.get(nodeId);
-            if (index == null) continue;
+        for (const nodeId of dirtyNodeIds) {
+            const baseIndex = this.idToIndex.get(nodeId);
+            if (baseIndex == null) continue;
 
             const node = graph.getNode(nodeId);
             if (node == null) continue;
 
-            const array = this.instanceArray.data;
-
-            const base = index * 8;
+            const base = baseIndex * 9;
             array.set(node.position, base + 0);
             array.set(node.size, base + 2);
             array.set(node.color, base + 4);
+            array[base + 8] = 0; // kind = node
 
-            const dataSlice = array.subarray(base, base + 8);
-
+            const nodeSlice = array.subarray(base, base + 9);
             this.context.gpu.updateSubBuffer(
                 this.instanceBuffer,
-                index * 32,
-                dataSlice.buffer,
-                dataSlice.byteOffset,
-                dataSlice.byteLength,
+                base * 4,
+                nodeSlice.buffer,
+                nodeSlice.byteOffset,
+                nodeSlice.byteLength,
             );
+
+            for (let h = 0; h < node.handles.length; h++) {
+                const handle = node.handles[h];
+                if (!handle.position) continue;
+
+                const hbase = (baseIndex + 1 + h) * 9;
+
+                const worldPosition = add(node.position, handle.position);
+                array.set(worldPosition, hbase + 0);
+                array.set([handle.radius, 0], hbase + 2);
+                array.set(handle.color, hbase + 4);
+                array[hbase + 8] = 1;
+
+                const handleSlice = array.subarray(hbase, hbase + 9);
+                this.context.gpu.updateSubBuffer(
+                    this.instanceBuffer,
+                    hbase * 4,
+                    handleSlice.buffer,
+                    handleSlice.byteOffset,
+                    handleSlice.byteLength,
+                );
+            }
         }
 
         graph.dirty.nodes.clear();
     }
 
     render(pass: GPURenderPassEncoder) {
-        if (
-            this.pipeline == null ||
-            this.vertexBuffer == null ||
-            this.instanceBuffer == null ||
-            this.instanceCount === 0
-        )
-            return;
+        if (this.instanceCount === 0) return;
 
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.context.viewport.bindGroup);
