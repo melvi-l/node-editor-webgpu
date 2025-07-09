@@ -16,8 +16,6 @@ export class PickingManager {
     private pickingView!: GPUTextureView;
     private readBuffer!: GPUBuffer;
 
-    private needUpdate: boolean = true;
-
     constructor(context: RenderContext, graph: Graph) {
         this.context = context;
         this.renderer = new PickingRenderer(context, this);
@@ -68,23 +66,22 @@ export class PickingManager {
     async pick(x: number, y: number): Promise<string | null> {
         const commandEncoder = this.context.gpu.device.createCommandEncoder();
 
-        if (this.needUpdate) {
-            // Render
-            const pass = commandEncoder.beginRenderPass({
-                colorAttachments: [
-                    {
-                        view: this.pickingView,
-                        clearValue: { r: 0.2, g: 0, b: 0, a: 1 },
-                        loadOp: "clear",
-                        storeOp: "store",
-                    },
-                ],
-            });
+        const pass = commandEncoder.beginRenderPass({
+            colorAttachments: [
+                {
+                    view: this.pickingView,
+                    clearValue: { r: 0.2, g: 0, b: 0, a: 1 },
+                    loadOp: "clear",
+                    storeOp: "store",
+                },
+            ],
+        });
 
-            this.renderer.sync(this.graph);
-            this.renderer.render(pass);
-            pass.end();
-        }
+        console.log("sync");
+
+        this.renderer.sync(this.graph);
+        this.renderer.render(pass);
+        pass.end();
 
         commandEncoder.copyTextureToBuffer(
             {
@@ -93,7 +90,7 @@ export class PickingManager {
             },
             {
                 buffer: this.readBuffer,
-                bytesPerRow: 256, // must be multiple of 256
+                bytesPerRow: 256,
             },
             {
                 width: 1,

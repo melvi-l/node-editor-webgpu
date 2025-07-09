@@ -2,7 +2,7 @@ struct VertexInput {
     @location(0) localPos: vec2f,
     @location(1) instancePos: vec2f,
     @location(2) instanceSize: vec2f,
-    @location(3) instanceColor: vec4f,
+    @location(3) instanceColor: vec3f,
 };
 
 struct Out {
@@ -20,7 +20,7 @@ fn vs_main(input: VertexInput) -> Out {
     let worldPos = input.instancePos + input.localPos * input.instanceSize;
 
     out.position = uProjectionMatrix * vec4f(worldPos, 0.0, 1.0);
-    out.color = input.instanceColor.rgb;
+    out.color = input.instanceColor;
 
     return out;
 } 

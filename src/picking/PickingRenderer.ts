@@ -5,7 +5,9 @@ import { RenderContext } from "@/renderer/type";
 import { PickingManager } from "./PickingManager";
 
 import { add, scale, sub, Vec2 } from "@/utils/math";
-import { toHandleRenderArray } from "@/renderer/adapter/handleAdapter";
+import { ResizableFloat32Array } from "@/renderer/ResizableFloat32Array";
+
+const bufferSize = 32 * 1_000_000; // instanceSize * maxInstanceCount
 
 export class PickingRenderer {
     private context: RenderContext;
@@ -14,7 +16,9 @@ export class PickingRenderer {
     private pipeline!: GPURenderPipeline;
     private vertexBuffer!: GPUBuffer;
     private instanceBuffer!: GPUBuffer;
+    private instanceArray = new ResizableFloat32Array();
     private instanceCount = 0;
+    private idToIndex = new Map<string, number>();
 
     constructor(context: RenderContext, picking: PickingManager) {
         this.context = context;
@@ -55,7 +59,7 @@ export class PickingRenderer {
                                 shaderLocation: 2,
                                 offset: 8,
                                 format: "float32x2",
-                            }, // position
+                            }, // size
                             {
                                 shaderLocation: 3,
                                 offset: 16,
@@ -81,47 +85,144 @@ export class PickingRenderer {
         );
 
         this.instanceBuffer = this.context.gpu.initBuffer(
-            1024 * 64,
+            bufferSize,
             GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         );
     }
 
     sync(graph: Graph) {
-        const instanceData: number[] = [];
-        let instanceCount = 0;
+        const array = this.instanceArray.data;
+        this.instanceCount = 0;
+        this.instanceArray.ensureCapacity(
+            (graph.nodeCount + graph.handleCount + graph.edgeCount) * 9 * 10,
+        );
+        this.idToIndex.clear();
 
+        let i = 0;
         for (const node of graph.getAllNode()) {
+            this.idToIndex.set(node.id, i);
+
             const id = this.picking.getOrCreateId(node.id);
             const [r, g, b] = this.picking
                 .encodeIdToColor(id)
                 .map((v) => v / 255);
 
-            instanceData.push(...node.position, ...node.size, r, g, b, 0);
-            instanceCount++;
-        }
-        toHandleRenderArray(graph).forEach(
-            ({ id: uId, position: center, radius }) => {
-                const id = this.picking.getOrCreateId(uId);
-                const [r, g, b] = this.picking
-                    .encodeIdToColor(id)
+            const base = i * 8;
+            array.set(node.position, base + 0);
+            array.set(node.size, base + 2);
+            array.set([r, g, b], base + 4);
+            array[base + 7] = 0; // padding
+            i++;
+
+            for (const handle of node.handles) {
+                if (!handle.position) continue;
+
+                const uId = handle.id;
+                const hId = this.picking.getOrCreateId(uId);
+                const [hr, hg, hb] = this.picking
+                    .encodeIdToColor(hId)
                     .map((v) => v / 255);
 
-                const demiSize = [radius + 2, radius + 2] as Vec2;
-                const position = sub(center, demiSize);
+                const demiSize = [handle.radius + 2, handle.radius + 2] as Vec2;
+                const pos = sub(add(node.position, handle.position), demiSize);
                 const size = scale(demiSize, 2);
 
-                instanceData.push(...position, ...size, r, g, b, 0);
-                instanceCount++;
-            },
+                const hbase = i * 8;
+
+                array.set(pos, hbase + 0);
+
+                array.set(size, hbase + 2);
+                array.set([hr, hg, hb], hbase + 4);
+                array[hbase + 7] = 0; // padding
+                i++;
+            }
+        }
+
+        this.instanceCount = i;
+
+        const slice = this.instanceArray.used;
+        this.context.gpu.device.queue.writeBuffer(
+            this.instanceBuffer,
+
+            0,
+            slice.buffer,
+            slice.byteOffset,
+            slice.byteLength,
         );
+    }
 
-        this.instanceCount = instanceCount;
+    /*
+     * Not precise enough, should find a way to target only updated node
+     * TODO: aim bette
+     */
+    syncPartial(graph: Graph) {
+        const dirtyNodeIds = graph.dirty.nodes;
+        if (dirtyNodeIds.size === 0) return;
 
-        const instanceArray = new Float32Array(instanceData);
-        this.context.gpu.updateBuffer(this.instanceBuffer, instanceArray);
+        const array = this.instanceArray.data;
+
+        for (const nodeId of dirtyNodeIds) {
+            const baseIndex = this.idToIndex.get(nodeId);
+            if (baseIndex === undefined) continue;
+
+            const node = graph.getNode(nodeId);
+
+            if (!node) continue;
+
+            const base = baseIndex * 8;
+            const id = this.picking.getOrCreateId(node.id);
+
+            const [r, g, b] = this.picking
+                .encodeIdToColor(id)
+                .map((v) => v / 255);
+
+            array.set(node.position, base + 0);
+            array.set(node.size, base + 2);
+            array.set([r, g, b], base + 4);
+
+            this.context.gpu.device.queue.writeBuffer(
+                this.instanceBuffer,
+                base * 4,
+                array.buffer,
+                base * 4,
+                32,
+            );
+
+            for (let h = 0; h < node.handles.length; h++) {
+                const handle = node.handles[h];
+                if (!handle.position) continue;
+
+                const hIndex = baseIndex + 1 + h;
+                const hbase = hIndex * 8;
+                const hId = this.picking.getOrCreateId(handle.id);
+
+                const [hr, hg, hb] = this.picking
+                    .encodeIdToColor(hId)
+                    .map((v) => v / 255);
+
+                const demiSize = [handle.radius + 2, handle.radius + 2] as Vec2;
+                const pos = sub(add(node.position, handle.position), demiSize);
+                const size = scale(demiSize, 2);
+
+                array.set(pos, hbase + 0);
+                array.set(size, hbase + 2);
+
+                array.set([hr, hg, hb], hbase + 4);
+
+                this.context.gpu.device.queue.writeBuffer(
+                    this.instanceBuffer,
+                    hbase * 4,
+                    array.buffer,
+                    hbase * 4,
+                    32,
+                );
+            }
+        }
     }
 
     render(pass: GPURenderPassEncoder) {
+        if (this.instanceCount === 0) return;
+
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.context.viewport.bindGroup);
         pass.setVertexBuffer(0, this.vertexBuffer);
