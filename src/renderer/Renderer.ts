@@ -3,10 +3,6 @@ import Graph from "@/core/Graph";
 import { RenderContext, ViewportSize } from "./type";
 
 import NodeRenderer from "./NodeRenderer";
-import { toNodeRenderArray } from "./adapter/nodeAdapter";
-
-import HandleRenderer from "./HandleRenderer";
-import { toHandleRenderArray } from "./adapter/handleAdapter";
 
 import EdgeRenderer from "./EdgeRenderer";
 import { toEdgeRenderArray } from "./adapter/edgeAdapter";
@@ -17,7 +13,6 @@ export default class Renderer {
     private context: RenderContext;
 
     private nodeRenderer: NodeRenderer;
-    private handleRenderer: HandleRenderer;
     private edgeRenderer: EdgeRenderer;
 
     private debugRenderer?: DebugTextureRenderer;
@@ -26,14 +21,12 @@ export default class Renderer {
         this.context = context;
         this.debugRenderer = debugRenderer;
         this.nodeRenderer = new NodeRenderer(this.context);
-        this.handleRenderer = new HandleRenderer(this.context);
         this.edgeRenderer = new EdgeRenderer(this.context);
     }
 
     async init() {
         await Promise.all([
             this.nodeRenderer.init(),
-            this.handleRenderer.init(),
             this.edgeRenderer.init(),
         ]);
     }

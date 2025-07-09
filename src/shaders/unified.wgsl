@@ -21,7 +21,7 @@ var<uniform> uProjectionMatrix: mat4x4<f32>;
 fn vs_main(input: VertexInput) -> VertexOutput {
     var out: VertexOutput;
 
-    let isHandle = input.kind != 0u;
+    let isHandle = input.kind != 0u; // do not work with input.kind == 1u
 
     let scale = select(input.sizeOrRadius / 2.0, vec2f(input.sizeOrRadius.x), isHandle);
     let offset = select(input.sizeOrRadius / 2.0, vec2f(0.0), isHandle);
