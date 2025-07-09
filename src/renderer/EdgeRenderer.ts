@@ -1,5 +1,8 @@
+import Graph from "@/core/Graph";
+import { ResizableFloat32Array } from "./ResizableFloat32Array";
 import { RenderContext, Uniform } from "./type";
 import { computeMitter, direction, normal, Vec2, Vec4 } from "@/utils/math";
+import { toEdgeRender } from "./adapter/edgeAdapter";
 
 type EdgeRendererOptions = {
     width: number;
@@ -18,6 +21,9 @@ export default class EdgeRenderer {
     private unitQuadBuffer!: GPUBuffer;
     private instanceBuffer!: GPUBuffer;
     private instanceCount = 0;
+    private instanceArray = new ResizableFloat32Array();
+    private idToIndex = new Map<string, number>();
+
     private opts: EdgeRendererOptions;
     private optsUniform!: Uniform;
 
@@ -136,66 +142,50 @@ export default class EdgeRenderer {
         );
     }
 
-    sync(edgeArray: EdgeRender[]) {
-        const instanceData: number[] = [];
+    sync(graph: Graph) {
+        let i = 0;
+        this.idToIndex.clear();
 
-        edgeArray.forEach((edge) => {
-            const { color, path } = edge;
+        for (const edge of graph.getAllEdge()) {
+            const edgeRender = toEdgeRender(graph, edge);
+            if (edgeRender == null) continue;
 
-            let lastMiter: {
-                miter: Vec2;
-                miterFactor: number;
-            } | null = null;
-            for (let i = 1; i < path.length; i++) {
-                const last = path[i - 1];
-                const curr = path[i];
-                const next = i < path.length - 1 ? path[i + 1] : null;
+            this.idToIndex.set(edge.id, i);
+            i += this.writeEdge(edgeRender, i);
+        }
 
-                const dirA = direction(last, curr);
-                if (i === 1) {
-                    lastMiter = {
-                        miter: normal(dirA),
-                        miterFactor: 1,
-                    };
-                }
-                if (lastMiter == null)
-                    throw new Error("Should be possible to access lastMitter");
-                if (next != null) {
-                    const dirB = direction(curr, next);
-                    const { miter, miterFactor } = computeMitter(dirA, dirB);
-                    instanceData.push(
-                        ...color,
-                        ...last,
-                        ...lastMiter.miter,
-                        ...curr,
-                        ...miter,
-                        lastMiter.miterFactor,
-                        miterFactor,
-                    );
-                    lastMiter = {
-                        miter,
-                        miterFactor,
-                    };
-                } else {
-                    instanceData.push(
-                        ...color,
-                        ...last,
-                        ...lastMiter.miter,
-                        ...curr,
-                        ...normal(dirA),
-                        lastMiter.miterFactor,
-                        1,
-                    );
-                    lastMiter = null; // clean
-                }
-            }
-        });
+        this.instanceCount = i;
+        this.instanceArray.ensureCapacity(i * 14);
 
-        this.instanceCount = instanceData.length / 8;
-        this.context.gpu.updateBuffer(
+        const slice = this.instanceArray.used;
+        this.context.gpu.device.queue.writeBuffer(
             this.instanceBuffer,
-            new Float32Array(instanceData),
+            0,
+            slice.buffer,
+            slice.byteOffset,
+            slice.byteLength,
         );
+    }
+
+    syncPartial(graph: Graph) {
+        const dirtyEdges = graph.dirty.edges;
+        if (dirtyEdges.size === 0) return;
+        console.log("partsync");
+
+        for (const edgeId of dirtyEdges) {
+            const baseIndex = this.idToIndex.get(edgeId);
+            if (baseIndex === undefined) continue;
+
+            const edge = graph.getEdge(edgeId);
+            if (!edge) continue;
+
+            const edgeRender = toEdgeRender(graph, edge);
+            if (edgeRender == null) continue;
+
+            this.writeEdge(edgeRender, baseIndex, true);
+        }
+
+        graph.dirty.edges.clear();
     }
 
     render(pass: GPURenderPassEncoder) {
@@ -214,7 +204,67 @@ export default class EdgeRenderer {
         pass.draw(4, this.instanceCount); // 4 vertices per quad, N instances
     }
 
-    computeOptsUniform() {
+    private writeEdge(
+        edge: EdgeRender,
+        baseIndex: number,
+        upload = false,
+    ): number {
+        const { color, path } = edge;
+        const array = this.instanceArray.data;
+        let i = baseIndex;
+
+        let lastMiter: { miter: Vec2; miterFactor: number } | null = null;
+
+        for (let p = 1; p < path.length; p++) {
+            const last = path[p - 1];
+            const curr = path[p];
+            const next = p < path.length - 1 ? path[p + 1] : null;
+
+            const dirA = direction(last, curr);
+            if (p === 1) {
+                lastMiter = { miter: normal(dirA), miterFactor: 1 };
+            }
+            if (!lastMiter) continue;
+
+            let endNormal: Vec2,
+                miterFactor = 1;
+
+            if (next) {
+                const dirB = direction(curr, next);
+                const m = computeMitter(dirA, dirB);
+                endNormal = m.miter;
+                miterFactor = m.miterFactor;
+            } else {
+                endNormal = normal(dirA);
+            }
+
+            const base = i * 14;
+            array.set(color, base + 0);
+            array.set(last, base + 4);
+            array.set(lastMiter.miter, base + 6);
+            array.set(curr, base + 8);
+            array.set(endNormal, base + 10);
+            array[base + 12] = lastMiter.miterFactor;
+            array[base + 13] = miterFactor;
+
+            if (upload) {
+                this.context.gpu.device.queue.writeBuffer(
+                    this.instanceBuffer,
+                    base * 4,
+                    array.buffer,
+                    base * 4,
+                    14 * 4,
+                );
+            }
+
+            lastMiter = { miter: endNormal, miterFactor };
+            i++;
+        }
+
+        return i - baseIndex;
+    }
+
+    private computeOptsUniform() {
         const buffer = this.context.gpu.createBuffer(
             new Float32Array([this.opts.width]),
             GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,

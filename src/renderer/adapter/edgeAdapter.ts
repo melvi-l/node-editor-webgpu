@@ -5,7 +5,7 @@ import { EdgeRender } from "../EdgeRenderer";
 
 import { add, scale, Vec2 } from "@/utils/math";
 
-function toEdgeRender(
+export function toEdgeRender(
     graph: Graph,
     { id, source, target, color }: Edge,
 ): EdgeRender | null {
@@ -61,15 +61,4 @@ function toEdgeRender(
         path,
         color,
     };
-}
-
-export function toEdgeRenderArray(graph: Graph): EdgeRender[] {
-    const edgeIterator = graph.getAllEdge();
-    const edgeRenderArray: EdgeRender[] = [];
-    for (const edge of edgeIterator) {
-        const edgeRender = toEdgeRender(graph, edge);
-        if (edgeRender == null) continue;
-        edgeRenderArray.push(edgeRender);
-    }
-    return edgeRenderArray;
 }

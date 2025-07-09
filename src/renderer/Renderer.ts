@@ -25,10 +25,7 @@ export default class Renderer {
     }
 
     async init() {
-        await Promise.all([
-            this.nodeRenderer.init(),
-            this.edgeRenderer.init(),
-        ]);
+        await Promise.all([this.nodeRenderer.init(), this.edgeRenderer.init()]);
     }
 
     render() {
@@ -47,11 +44,11 @@ export default class Renderer {
     syncGraph(graph: Graph) {
         if (graph.dirty.global === false) {
             this.nodeRenderer.syncPartial(graph);
-            this.edgeRenderer.sync(toEdgeRenderArray(graph));
+            this.edgeRenderer.syncPartial(graph);
             return;
         }
         this.nodeRenderer.sync(graph);
-        this.edgeRenderer.sync(toEdgeRenderArray(graph));
+        this.edgeRenderer.sync(graph);
 
         graph.dirty.global = false;
     }

@@ -5,11 +5,11 @@ import { id } from "@/utils/id";
 export type EdgeArgs = {
     source: {
         nodeId: string;
-        handleId?: string;
+        handleId: string;
     };
     target: {
         nodeId: string;
-        handleId?: string;
+        handleId: string;
     };
     color?: Vec4;
 };
@@ -17,11 +17,11 @@ export default class Edge implements Hoverable, Selectable {
     id: string;
     source: {
         nodeId: string;
-        handleId?: string;
+        handleId: string;
     };
     target: {
         nodeId: string;
-        handleId?: string;
+        handleId: string;
     };
     color: Vec4;
 

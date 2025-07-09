@@ -17,7 +17,8 @@ export default class Graph {
     private _handleRegistry = new Map<
         string,
         { handle: Handle; nodeId: string }
-    >();
+    >(); // handle in node -> registry for getting nodeId from handleId
+    private _edgeRegistry = new Map<string, string>(); // edge outside of node.handles -> registry for getting edgeId from handleId
 
     private _dirty: DirtyState = {
         global: false,
@@ -26,7 +27,7 @@ export default class Graph {
         edges: new Set(),
     };
 
-    constructor() {}
+    constructor() { }
 
     init(nodeArray: Node[], edgeArray: Edge[]) {
         this.nodes = new Map(nodeArray.map((node) => [node.id, node]));
@@ -57,17 +58,6 @@ export default class Graph {
 
         return _node;
     }
-    addEdge(edge: Edge | EdgeArgs): Edge {
-        const _edge = edge instanceof Edge ? edge : new Edge(edge);
-
-        if (this.edges.has(_edge.id))
-            throw new Error(`Edge ${_edge.id} already exists.`);
-
-        this.edges.set(_edge.id, _edge);
-
-        this._dirty.global = true;
-        return _edge;
-    }
     addHandle(nodeId: string, handle: Handle | HandleArgs): Handle {
         const _handle = handle instanceof Handle ? handle : new Handle(handle);
 
@@ -87,24 +77,69 @@ export default class Graph {
         this._dirty.global = true;
         return _handle;
     }
+    addEdge(edge: Edge | EdgeArgs): Edge {
+        const _edge = edge instanceof Edge ? edge : new Edge(edge);
+
+        if (this.edges.has(_edge.id))
+            throw new Error(`Edge ${_edge.id} already exists.`);
+
+        this.edges.set(_edge.id, _edge);
+
+        this._edgeRegistry.set(_edge.source.handleId, _edge.id);
+        this._edgeRegistry.set(_edge.target.handleId, _edge.id);
+
+        this._dirty.global = true;
+        return _edge;
+    }
 
     moveNode(nodeId: string, newPosition: Vec2) {
         const node = this.nodes.get(nodeId);
         if (!node) throw new Error(`Node ${nodeId} not found`);
 
-        this._dirty.nodes.add(node.id);
         node.position = [...newPosition]; // might be in place later on
+
+        for (const handle of node.handles) {
+            const edgeId = this._edgeRegistry.get(handle.id);
+            if (edgeId == null) continue;
+
+            this._dirty.edges.add(edgeId);
+        }
+        this._dirty.nodes.add(node.id);
     }
 
     removeNode(nodeId: string) {
-        this.nodes.delete(nodeId);
-        for (const [edgeId, edge] of this.edges) {
-            if (
-                edge.source.nodeId === nodeId ||
-                edge.target.nodeId === nodeId
-            ) {
-                this.edges.delete(edgeId);
+        const node = this.getNode(nodeId);
+        if (node != null) {
+            for (const handle of node?.handles) {
+                this.removeHandle(handle.id, node);
             }
+        }
+
+        this.nodes.delete(nodeId);
+        this._dirty.global = true;
+    }
+    removeHandle(handleId: string, _node?: Node) {
+        const node =
+            _node ??
+            (() => {
+                const nodeId = this._handleRegistry.get(handleId)?.nodeId;
+                if (nodeId == null) return;
+                return this.getNode(nodeId);
+            })();
+
+        if (node != null) {
+            const index = node.handles.findIndex((h) => h.id === handleId);
+            if (index >= 0) {
+                node.handles.splice(index, 1);
+                node.updateHandlesPosition();
+            }
+
+            this._handleRegistry.delete(handleId);
+        }
+
+        const edgeId = this._edgeRegistry.get(handleId);
+        if (edgeId != null) {
+            this.removeEdge(edgeId);
         }
 
         this._dirty.global = true;
@@ -112,26 +147,12 @@ export default class Graph {
     removeEdge(edgeId: string) {
         this.edges.delete(edgeId);
 
-        this._dirty.global = true;
-    }
-    removeHandle(handleId: string) {
-        for (const node of this.nodes.values()) {
-            const index = node.handles.findIndex(
-                (handle) => handle.id === handleId,
-            );
-            if (index === -1) break;
-            node.handles.splice(index, 1);
-            node.updateHandlesPosition();
+        const edge = this.getEdge(edgeId);
+        if (edge) {
+            this._edgeRegistry.delete(edge.source.handleId);
+            this._edgeRegistry.delete(edge.target.handleId);
         }
-        for (const edge of this.edges.values()) {
-            if (
-                edge.source.handleId !== handleId &&
-                edge.target.handleId !== handleId
-            )
-                break;
-            this.edges.delete(edge.id);
-        }
-        this._handleRegistry.delete(handleId);
+        this.edges.delete(edgeId);
 
         this._dirty.global = true;
     }
@@ -139,11 +160,11 @@ export default class Graph {
     getNode(id: string): Node | undefined {
         return this.nodes.get(id);
     }
-    getEdge(id: string): Edge | undefined {
-        return this.edges.get(id);
-    }
     getHandle(id: string): { handle: Handle; nodeId: string } | undefined {
         return this._handleRegistry.get(id);
+    }
+    getEdge(id: string): Edge | undefined {
+        return this.edges.get(id);
     }
     getElement(id: string): Node | Edge | Handle | undefined {
         const type = getType(id);
@@ -155,20 +176,20 @@ export default class Graph {
     get nodeCount(): number {
         return this.nodes.size;
     }
-    get edgeCount(): number {
-        return this.edges.size;
-    }
     get handleCount(): number {
         return this._handleRegistry.size;
+    }
+    get edgeCount(): number {
+        return this.edges.size;
     }
     getAllNode(): MapIterator<Node> {
         return this.nodes.values();
     }
-    getAllEdge(): MapIterator<Edge> {
-        return this.edges.values();
-    }
     getAllHandle(): MapIterator<{ handle: Handle; nodeId: string }> {
         return this._handleRegistry.values();
+    }
+    getAllEdge(): MapIterator<Edge> {
+        return this.edges.values();
     }
 
     get dirty(): DirtyState {

@@ -77,8 +77,8 @@ async function main(...size: [number, number]) {
         color: g2,
     });
     const e = graph.addEdge({
-        source: { nodeId: a.id },
-        target: { nodeId: b.id },
+        source: { nodeId: a.id, handleId: ah.id },
+        target: { nodeId: b.id, handleId: bh.id },
     });
 
     function frame(now: DOMHighResTimeStamp) {
