@@ -1,7 +1,7 @@
 import Graph from "@/core/Graph";
 import { RenderContext, Uniform } from "./type";
 import { Vec2, Vec4, add } from "@/utils/math";
-import { toRGBA } from "@/utils/color";
+import { colorHEX } from "@/utils/color";
 
 type SelectionRenderOptions = {
     backgroundColor: Vec4;
@@ -18,9 +18,9 @@ export default class SelectionRenderer {
     constructor(
         context: RenderContext,
         opts: SelectionRenderOptions = {
-            backgroundColor: toRGBA([0, 160, 0, 0.5]),
-            outlineColor: toRGBA([0, 160, 0, 1]),
-            outlineWidth: 10,
+            backgroundColor: colorHEX("#7180E440"),
+            outlineColor: colorHEX("#7180E4"),
+            outlineWidth: 2,
         },
     ) {
         this.context = context;
@@ -77,6 +77,19 @@ export default class SelectionRenderer {
                 targets: [
                     {
                         format: this.context.gpu.format,
+                        blend: {
+                            color: {
+                                srcFactor: "src-alpha",
+                                dstFactor: "one-minus-src-alpha",
+                                operation: "add",
+                            },
+                            alpha: {
+                                srcFactor: "one",
+                                dstFactor: "one-minus-src-alpha",
+                                operation: "add",
+                            },
+                        },
+                        writeMask: GPUColorWrite.ALL,
                     },
                 ],
             },
@@ -139,7 +152,7 @@ export default class SelectionRenderer {
             entries: [
                 {
                     binding: 0,
-                    visibility: GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: {
                         type: "uniform",
                     },

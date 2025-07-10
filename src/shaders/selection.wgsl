@@ -6,6 +6,7 @@ struct VertexIn {
 struct VertexOut {
     @builtin(position) position: vec4<f32>,
     @location(0) fragUV: vec2<f32>,
+    @location(1) size: vec2<f32>,
 };
 
 
@@ -17,7 +18,7 @@ struct TransformUniforms {
 struct StyleUniforms {
     backgroundColor: vec4<f32>,
     outlineColor: vec4<f32>,
-    outlineThickness: f32,
+    outlineWidth: f32,
 };
 
 @group(0) @binding(0)
@@ -43,10 +44,10 @@ fn vs_main(input: VertexIn) -> VertexOut {
 
 @fragment
 fn fs_main(input: VertexOut) -> @location(0) vec4<f32> {
-//    let t = style.outlineThickness;
-//
-//    let isBorder = input.fragUV.x < t || input.fragUV.x > (1.0 - t) || input.fragUV.y < t || input.fragUV.y > (1.0 - t);
-//
-    return select(style.backgroundColor, style.outlineColor, false);
+    let t = vec2f(style.outlineWidth, style.outlineWidth) / transform.size;
+
+    let isBorder = input.fragUV.x < t.x || input.fragUV.x > (1.0 - t.x) || input.fragUV.y < t.y || input.fragUV.y > (1.0 - t.y);
+
+    return select(style.backgroundColor, style.outlineColor, isBorder);
 }
 
