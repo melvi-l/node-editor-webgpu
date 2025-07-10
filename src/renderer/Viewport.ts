@@ -1,6 +1,8 @@
-import { makeOrthoProjection } from "@/utils/mat4";
 import GPUResources from "./GPUResources";
+
 import { Uniform, ViewportSize } from "./type";
+
+import { makeOrthoProjection } from "@/utils/mat4";
 
 export default class Viewport implements Uniform {
     private _buffer: GPUBuffer;

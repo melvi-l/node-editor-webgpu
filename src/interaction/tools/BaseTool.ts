@@ -1,10 +1,11 @@
-import { getType } from "@/utils/id";
 import { InteractionTool } from "../Tool";
 import { Interactor } from "../Interactor";
 import Graph from "@/core/Graph";
+
 import { DragTool } from "./DragTool";
 import ConnectTool from "./ConnectTool";
 import SelectionTool from "./SelectionTool";
+import { getType } from "@/utils/id";
 
 export default class BaseTool implements InteractionTool {
     constructor(

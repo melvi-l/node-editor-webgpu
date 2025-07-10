@@ -77,8 +77,6 @@ export class PickingManager {
             ],
         });
 
-        console.log("sync");
-
         this.renderer.sync(this.graph);
         this.renderer.render(pass);
         pass.end();

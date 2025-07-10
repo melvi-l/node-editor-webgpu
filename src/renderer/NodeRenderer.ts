@@ -1,7 +1,9 @@
 import Graph from "@/core/Graph";
 import { RenderContext } from "./type";
-import { Vec2, Vec4, add } from "@/utils/math";
+
 import { ResizableFloat32Array } from "./ResizableFloat32Array";
+
+import { add } from "@/utils/math";
 
 const bufferSize = 32 * 1_000_000; // instanceSize * maxInstanceCount
 

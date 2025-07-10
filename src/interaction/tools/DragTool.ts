@@ -1,8 +1,9 @@
-import Graph from "@/core/Graph";
-import { Interactor } from "../Interactor";
-import { add, sub, Vec2 } from "@/utils/math";
 import { InteractionTool } from "../Tool";
+import { Interactor } from "../Interactor";
+import Graph from "@/core/Graph";
 import BaseTool from "./BaseTool";
+
+import { add, sub, Vec2 } from "@/utils/math";
 import { getType } from "@/utils/id";
 
 export class DragTool implements InteractionTool {

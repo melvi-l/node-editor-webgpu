@@ -13,7 +13,7 @@ export type EdgeArgs = {
     };
     color?: Vec4;
 };
-export default class Edge implements Hoverable, Selectable {
+export default class Edge {
     id: string;
     source: {
         nodeId: string;

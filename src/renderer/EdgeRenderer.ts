@@ -2,7 +2,7 @@ import Graph from "@/core/Graph";
 import { ResizableFloat32Array } from "./ResizableFloat32Array";
 import { RenderContext, Uniform } from "./type";
 import { computeMitter, direction, normal, Vec2, Vec4 } from "@/utils/math";
-import { toEdgeRender } from "./adapter/edgeAdapter";
+
 import Edge from "@/core/Edge";
 
 type EdgeRendererOptions = {
@@ -172,7 +172,6 @@ export default class EdgeRenderer {
     syncPartial(graph: Graph) {
         const dirtyEdges = graph.dirty.edges;
         if (dirtyEdges.size === 0) return;
-        console.log("partsync");
 
         for (const edgeId of dirtyEdges) {
             const baseIndex = this.idToIndex.get(edgeId);
@@ -183,7 +182,7 @@ export default class EdgeRenderer {
 
             const startEnd = graph.computeEdgeStartEnd(edge);
             if (startEnd == null) continue;
-            const path = edge.computePath(...startEnd)
+            const path = edge.computePath(...startEnd);
 
             this.writeEdge(edge, path, baseIndex, true);
         }

@@ -1,6 +1,7 @@
 import Graph from "@/core/Graph";
 import { RenderContext, Uniform } from "./type";
-import { Vec2, Vec4, add } from "@/utils/math";
+
+import { Vec4 } from "@/utils/math";
 import { colorHEX } from "@/utils/color";
 
 type SelectionRenderOptions = {

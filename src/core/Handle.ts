@@ -8,7 +8,7 @@ export type HandleType = "input" | "output";
 
 export type HandleArgs = { type: HandleType; color?: Vec4; radius?: number };
 
-export default class Handle implements Hoverable, Selectable {
+export default class Handle {
     id: string;
     type: HandleType;
     color: Vec4;

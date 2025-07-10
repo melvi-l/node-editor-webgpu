@@ -2,9 +2,10 @@ import { InteractionTool } from "../Tool";
 import { Interactor } from "../Interactor";
 import Graph from "@/core/Graph";
 
-import { QuadTree } from "@/picking/QuadTree";
-import { sub, Vec2 } from "@/utils/math";
 import SelectionZone from "@/core/SelectionZone";
+import { QuadTree } from "@/picking/QuadTree";
+
+import { sub, Vec2 } from "@/utils/math";
 
 export default class SelectionTool implements InteractionTool {
     private quadTree!: QuadTree<string>;
@@ -71,7 +72,7 @@ export default class SelectionTool implements InteractionTool {
         }
     }
 
-    async update(): void {
+    async update() {
         const id = await this.interactor.pick();
         if (id === this.interactor.hoveredId) return;
         this.interactor.setHoveredId(id);

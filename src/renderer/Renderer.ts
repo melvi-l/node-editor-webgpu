@@ -2,12 +2,11 @@ import Graph from "@/core/Graph";
 
 import { RenderContext, ViewportSize } from "./type";
 
+import SelectionRenderer from "./SelectionRenderer";
 import NodeRenderer from "./NodeRenderer";
-
 import EdgeRenderer from "./EdgeRenderer";
 
 import { DebugTextureRenderer } from "@/debug/DebugRenderer";
-import SelectionRenderer from "./SelectionRenderer";
 
 export default class Renderer {
     private context: RenderContext;

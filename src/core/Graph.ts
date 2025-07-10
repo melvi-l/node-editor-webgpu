@@ -1,9 +1,11 @@
-import { add, scale, Vec2 } from "@/utils/math";
-import Edge, { EdgeArgs } from "./Edge";
-import Handle, { HandleArgs } from "./Handle";
-import Node, { NodeArgs } from "./Node";
-import { getType } from "@/utils/id";
 import SelectionZone from "./SelectionZone";
+import Node, { NodeArgs } from "./Node";
+import Handle, { HandleArgs } from "./Handle";
+import Edge, { EdgeArgs } from "./Edge";
+
+
+import { add, Vec2 } from "@/utils/math";
+import { getType } from "@/utils/id";
 
 type DirtyState = {
     selection: boolean;
@@ -31,7 +33,7 @@ export default class Graph {
         edges: new Set(),
     };
 
-    constructor() { }
+    constructor() {}
 
     init(nodeArray: Node[], edgeArray: Edge[]) {
         this.nodes = new Map(nodeArray.map((node) => [node.id, node]));
@@ -130,7 +132,6 @@ export default class Graph {
 
         if (node != null) {
             node.handles = node.handles.filter((h) => h.id !== handleId);
-            console.log(node.handles.filter((h) => h.id !== handleId));
 
             node.updateHandlesPosition();
 

@@ -1,6 +1,7 @@
 import Graph from "@/core/Graph";
 import { InteractionTool } from "../Tool";
 import { Interactor } from "../Interactor";
+
 import { Vec2 } from "@/utils/math";
 import { getType } from "@/utils/id";
 

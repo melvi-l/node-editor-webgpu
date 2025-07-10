@@ -31,8 +31,6 @@ export class DebugTextureRenderer {
             GPUBufferUsage.VERTEX,
         );
 
-        console.log(pickingTexture);
-
         const textureView = pickingTexture.createView();
 
         const bindGroupLayout = this.context.gpu.device.createBindGroupLayout({
