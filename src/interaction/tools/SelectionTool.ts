@@ -4,14 +4,13 @@ import Graph from "@/core/Graph";
 
 import { QuadTree } from "@/picking/QuadTree";
 import { sub, Vec2 } from "@/utils/math";
+import SelectionZone from "@/core/SelectionZone";
 
 export default class SelectionTool implements InteractionTool {
     private quadTree!: QuadTree<string>;
 
-    private isPressing: boolean = false;
-
-    private zoneStart: Vec2 = [0, 0];
-    private zoneEnd: Vec2 = [0, 0];
+    private zoneStart!: Vec2;
+    private zoneEnd!: Vec2;
 
     constructor(
         private interactor: Interactor,
@@ -21,6 +20,15 @@ export default class SelectionTool implements InteractionTool {
     }
 
     init() {
+        this.zoneStart = this.interactor.mousePosition;
+        this.zoneEnd = this.interactor.mousePosition;
+
+        const size = sub(this.zoneEnd, this.zoneStart);
+
+        this.graph.selectionZone = new SelectionZone(this.zoneStart, size);
+        this.graph.selectionZone?.setPosition(this.zoneStart);
+        this.graph.selectionZone?.setSize(size);
+
         this.quadTree = new QuadTree({
             position: [-10_000, -10_000],
             size: [20_000, 20_000],
@@ -63,7 +71,7 @@ export default class SelectionTool implements InteractionTool {
         }
     }
 
-    update(): void { }
+    update(): void {}
 
     onPointerDown(e: PointerEvent) {
         if (this.interactor.hoveredId) {
@@ -73,18 +81,26 @@ export default class SelectionTool implements InteractionTool {
         this.zoneStart = this.interactor.mousePosition;
         this.zoneEnd = this.interactor.mousePosition;
 
-        this.isPressing = true;
+        this.graph.selectionZone?.setPosition(this.zoneStart);
+        this.graph.dirty.selection = true;
     }
 
     onPointerMove(e: PointerEvent): void {
-        if (!this.isPressing) return;
+        if (!this.interactor.isPressing) return;
 
         this.zoneEnd = this.interactor.mousePosition;
+
+        console.log(this.graph.selectionZone);
+
+        const size = sub(this.zoneEnd, this.zoneStart);
+
+        this.graph.selectionZone?.setSize(size);
+        this.graph.dirty.selection = true;
 
         this.quadTree
             .query({
                 position: this.zoneStart,
-                size: sub(this.zoneEnd, this.zoneStart),
+                size,
             })
             .forEach((selectedId) =>
                 this.interactor.selectedIdSet.add(selectedId),
@@ -94,12 +110,13 @@ export default class SelectionTool implements InteractionTool {
     onPointerUp(e: PointerEvent): void {
         this.zoneStart = [0, 0];
         this.zoneEnd = [0, 0];
-
-        this.isPressing = false;
+        this.graph.selectionZone?.reset();
+        this.graph.dirty.selection = true;
     }
 
     onKeyUp(e: KeyboardEvent): void {
         if (e.key === "Shift") {
+            this.graph.selectionZone = null;
             this.interactor.resetTool();
         }
     }

@@ -5,12 +5,14 @@ import { RenderContext, ViewportSize } from "./type";
 import NodeRenderer from "./NodeRenderer";
 
 import EdgeRenderer from "./EdgeRenderer";
-import { toEdgeRenderArray } from "./adapter/edgeAdapter";
 
 import { DebugTextureRenderer } from "@/debug/DebugRenderer";
+import SelectionRenderer from "./SelectionRenderer";
 
 export default class Renderer {
     private context: RenderContext;
+
+    private selectionRenderer: SelectionRenderer;
 
     private nodeRenderer: NodeRenderer;
     private edgeRenderer: EdgeRenderer;
@@ -20,12 +22,17 @@ export default class Renderer {
     constructor(context: RenderContext, debugRenderer?: DebugTextureRenderer) {
         this.context = context;
         this.debugRenderer = debugRenderer;
+        this.selectionRenderer = new SelectionRenderer(this.context);
         this.nodeRenderer = new NodeRenderer(this.context);
         this.edgeRenderer = new EdgeRenderer(this.context);
     }
 
     async init() {
-        await Promise.all([this.nodeRenderer.init(), this.edgeRenderer.init()]);
+        await Promise.all([
+            this.selectionRenderer.init(),
+            this.nodeRenderer.init(),
+            this.edgeRenderer.init(),
+        ]);
     }
 
     render() {
@@ -33,6 +40,7 @@ export default class Renderer {
 
         this.edgeRenderer.render(pass);
         this.nodeRenderer.render(pass);
+        this.selectionRenderer.render(pass);
 
         if (this.debugRenderer != null) {
             this.debugRenderer.render(pass);
@@ -42,6 +50,7 @@ export default class Renderer {
     }
 
     syncGraph(graph: Graph) {
+        this.selectionRenderer.sync(graph);
         if (graph.dirty.global === false) {
             this.nodeRenderer.syncPartial(graph);
             this.edgeRenderer.syncPartial(graph);

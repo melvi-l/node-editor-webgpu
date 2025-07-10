@@ -20,8 +20,6 @@ export class DragTool implements InteractionTool {
     update() {
         const offset = sub(this.interactor.mousePosition, this.lastPosition);
         for (const elementId of this.interactor.selectedIdSet) {
-            console.log(elementId);
-            
             if (getType(elementId) !== "node") continue;
             const node = this.graph.getNode(elementId);
             if (node == null) continue;

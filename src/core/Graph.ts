@@ -3,8 +3,10 @@ import Edge, { EdgeArgs } from "./Edge";
 import Handle, { HandleArgs } from "./Handle";
 import Node, { NodeArgs } from "./Node";
 import { getType } from "@/utils/id";
+import SelectionZone from "./SelectionZone";
 
 type DirtyState = {
+    selection: boolean;
     global: boolean;
     nodes: Set<string>; // maybe switch to weakset
     handles: Set<string>;
@@ -12,6 +14,7 @@ type DirtyState = {
 };
 
 export default class Graph {
+    selectionZone: SelectionZone | null = null;
     nodes = new Map<string, Node>();
     edges = new Map<string, Edge>();
     private _handleRegistry = new Map<
@@ -21,6 +24,7 @@ export default class Graph {
     private _edgeRegistry = new Map<string, string>(); // edge outside of node.handles -> registry for getting edgeId from handleId
 
     private _dirty: DirtyState = {
+        selection: false,
         global: false,
         nodes: new Set(),
         handles: new Set(),

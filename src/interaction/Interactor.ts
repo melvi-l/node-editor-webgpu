@@ -28,6 +28,7 @@ export class Interactor {
 
     private currentTool: InteractionTool;
 
+    private _isPressing: boolean = false;
     private _mousePosition: Vec2 = [0, 0];
     private mouseMoved = false;
 
@@ -77,9 +78,11 @@ export class Interactor {
         this.currentTool?.onPointerMove?.(e);
     };
     onPointerDown = (e: PointerEvent) => {
+        this._isPressing = true
         this.currentTool?.onPointerDown?.(e);
     };
     onPointerUp = (e: PointerEvent) => {
+        this._isPressing = false
         this.currentTool?.onPointerUp?.(e);
     };
     onKeyDown = (e: KeyboardEvent) => {
@@ -145,6 +148,9 @@ export class Interactor {
         this.currentTool?.onWheel?.(e);
     };
 
+    get isPressing() {
+        return this._isPressing;
+    }
     get mousePosition() {
         return this._mousePosition;
     }
