@@ -117,7 +117,14 @@ export default class NodeRenderer {
             const base = i * 9;
             array.set(node.position, base + 0);
             array.set(node.size, base + 2);
-            array.set(node.color, base + 4);
+            array.set(
+                node.style.backgroundColor[
+                    this.context.state.selectedIdSet.has(node.id)
+                        ? "selected"
+                        : "default"
+                ],
+                base + 4,
+            );
             array[base + 8] = 0; // kind = node
             i++;
 
@@ -162,7 +169,14 @@ export default class NodeRenderer {
             const base = baseIndex * 9;
             array.set(node.position, base + 0);
             array.set(node.size, base + 2);
-            array.set(node.color, base + 4);
+            array.set(
+                node.style.backgroundColor[
+                    this.context.state.selectedIdSet.has(node.id)
+                        ? "selected"
+                        : "default"
+                ],
+                base + 4,
+            );
             array[base + 8] = 0; // kind = node
 
             const nodeSlice = array.subarray(base, base + 9);

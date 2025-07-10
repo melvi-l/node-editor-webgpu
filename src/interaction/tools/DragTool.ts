@@ -19,7 +19,7 @@ export class DragTool implements InteractionTool {
 
     update() {
         const offset = sub(this.interactor.mousePosition, this.lastPosition);
-        for (const elementId of this.interactor.selectedIdSet) {
+        for (const elementId of this.interactor.selectedIdIterator) {
             if (getType(elementId) !== "node") continue;
             const node = this.graph.getNode(elementId);
             if (node == null) continue;
@@ -29,7 +29,7 @@ export class DragTool implements InteractionTool {
         this.lastPosition = this.interactor.mousePosition;
     }
 
-    onPointerMove(e: PointerEvent): void { }
+    onPointerMove(e: PointerEvent): void {}
 
     onPointerUp(event: PointerEvent) {
         this.interactor.setTool?.(new BaseTool(this.interactor, this.graph));

@@ -1,29 +1,35 @@
 import { Vec2, Vec4 } from "@/utils/math";
 import Handle from "./Handle";
-import { getColorFromUUID } from "@/utils/color";
+import { colorHEX, getNodeStyleFromUUID } from "@/utils/color";
 import { id } from "@/utils/id";
 
 export type NodeArgs = {
     position: Vec2;
     size: Vec2;
-    color?: Vec4;
     handles?: Handle[];
+    style?: NodeStyle;
+};
+export type NodeStyle = {
+    backgroundColor: { default: Vec4; selected: Vec4 };
+    outlineColor: { default: Vec4; selected: Vec4 };
+    outlineWidth: number;
 };
 export default class Node implements Hoverable, Selectable {
     id: string;
     position: Vec2;
     size: Vec2;
-    color: Vec4;
+    style: NodeStyle;
     handles: Handle[];
 
     isHovered: boolean = false;
     isSelected: boolean = false;
 
-    constructor({ position, size, color, handles }: NodeArgs) {
+    constructor({ position, size, style, handles }: NodeArgs) {
         this.id = id("node");
         this.position = position;
         this.size = size;
-        this.color = color ?? getColorFromUUID(this.id);
+        this.style = style ?? getNodeStyleFromUUID(this.id);
+        this.style.backgroundColor.selected = colorHEX("#fff");
         this.handles = handles ?? [];
     }
 

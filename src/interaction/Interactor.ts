@@ -78,11 +78,11 @@ export class Interactor {
         this.currentTool?.onPointerMove?.(e);
     };
     onPointerDown = (e: PointerEvent) => {
-        this._isPressing = true
+        this._isPressing = true;
         this.currentTool?.onPointerDown?.(e);
     };
     onPointerUp = (e: PointerEvent) => {
-        this._isPressing = false
+        this._isPressing = false;
         this.currentTool?.onPointerUp?.(e);
     };
     onKeyDown = (e: KeyboardEvent) => {
@@ -126,7 +126,7 @@ export class Interactor {
             return;
         }
         if (e.key === "Backspace" || e.key === "Delete") {
-            for (const selectedId of this.selectedIdSet) {
+            for (const selectedId of this.context.state.selectedIdSet) {
                 const type = getType(selectedId);
                 if (type === "node") {
                     this.graph.removeNode(selectedId);
@@ -137,7 +137,7 @@ export class Interactor {
             }
         }
         if (e.key === "Escape") {
-            this.selectedIdSet.clear();
+            this.clearSelectedIdSet();
         }
         this.currentTool?.onKeyDown?.(e);
     };
@@ -176,8 +176,23 @@ export class Interactor {
     get hoveredId(): Readonly<string | null> {
         return this.context.state.hoveredId;
     }
-    get selectedIdSet(): Set<string> {
-        return this.context.state.selectedIdSet;
+    get selectedIdIterator(): Readonly<SetIterator<string>> {
+        return this.context.state.selectedIdSet.values();
+    }
+    selectId(selectedId: string) {
+        this.graph.dirty.global = true;
+        return this.context.state.selectedIdSet.add(selectedId);
+    }
+    unselectId(selectedId: string) {
+        this.graph.dirty.global = true;
+        return this.context.state.selectedIdSet.delete(selectedId);
+    }
+    isSelected(id: string) {
+        return this.context.state.selectedIdSet.has(id);
+    }
+    clearSelectedIdSet() {
+        this.graph.dirty.global = true;
+        return this.context.state.selectedIdSet.clear();
     }
     setHoveredId(hoveredId: string | null) {
         this.context.state.hoveredId = hoveredId;

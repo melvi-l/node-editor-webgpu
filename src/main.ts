@@ -50,11 +50,9 @@ async function main(...size: [number, number]) {
     const g0 = colorHEX("#555");
     const g1 = colorHEX("#777");
     const g2 = colorHEX("#999");
-
     const a = graph.addNode({
         position: [100, 100],
         size: [200, 100],
-        color: g0,
     });
 
     const ah = graph.addHandle(a.id, {
@@ -66,7 +64,6 @@ async function main(...size: [number, number]) {
     const b = graph.addNode({
         position: [800, 600],
         size: [50, 100],
-        color: g0,
     });
     const bh = graph.addHandle(b.id, {
         type: "input",

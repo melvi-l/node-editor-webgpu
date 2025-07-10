@@ -10,31 +10,29 @@ export default class BaseTool implements InteractionTool {
     constructor(
         private interactor: Interactor,
         private graph: Graph,
-    ) { }
+    ) {}
 
     async update() {
         const id = await this.interactor.pick();
-
         if (id === this.interactor.hoveredId) return;
-
         this.interactor.setHoveredId(id);
     }
 
     onPointerDown(e: PointerEvent) {
-        const { hoveredId, selectedIdSet } = this.interactor;
+        const { hoveredId } = this.interactor;
 
         if (hoveredId == null) {
-            selectedIdSet.clear();
+            this.interactor.clearSelectedIdSet();
             return;
         }
 
-        if (!selectedIdSet.has(hoveredId)) {
-            selectedIdSet.clear();
+        if (!this.interactor.isSelected(hoveredId)) {
+            this.interactor.clearSelectedIdSet();
         }
 
         const type = getType(hoveredId);
         if (type === "node") {
-            selectedIdSet.add(hoveredId);
+            this.interactor.selectId(hoveredId);
         }
         if (type === "handle") {
             this.interactor.setTool(
@@ -42,9 +40,7 @@ export default class BaseTool implements InteractionTool {
             );
         }
 
-        if (selectedIdSet.has(hoveredId)) {
-            this.interactor.setTool(new DragTool(this.interactor, this.graph));
-        }
+        this.interactor.setTool(new DragTool(this.interactor, this.graph));
 
         this.interactor.forwardEventToTool("onPointerDown", e);
     }

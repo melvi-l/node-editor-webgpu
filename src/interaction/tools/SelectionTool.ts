@@ -71,11 +71,19 @@ export default class SelectionTool implements InteractionTool {
         }
     }
 
-    update(): void {}
+    async update(): void {
+        const id = await this.interactor.pick();
+        if (id === this.interactor.hoveredId) return;
+        this.interactor.setHoveredId(id);
+    }
 
     onPointerDown(e: PointerEvent) {
         if (this.interactor.hoveredId) {
-            this.interactor.selectedIdSet.add(this.interactor.hoveredId);
+            if (this.interactor.isSelected(this.interactor.hoveredId)) {
+                this.interactor.unselectId(this.interactor.hoveredId);
+            } else {
+                this.interactor.selectId(this.interactor.hoveredId);
+            }
         }
 
         this.zoneStart = this.interactor.mousePosition;
@@ -90,8 +98,6 @@ export default class SelectionTool implements InteractionTool {
 
         this.zoneEnd = this.interactor.mousePosition;
 
-        console.log(this.graph.selectionZone);
-
         const size = sub(this.zoneEnd, this.zoneStart);
 
         this.graph.selectionZone?.setSize(size);
@@ -102,16 +108,13 @@ export default class SelectionTool implements InteractionTool {
                 position: this.zoneStart,
                 size,
             })
-            .forEach((selectedId) =>
-                this.interactor.selectedIdSet.add(selectedId),
-            );
+            .forEach((selectedId) => this.interactor.selectId(selectedId));
     }
 
     onPointerUp(e: PointerEvent): void {
         this.zoneStart = [0, 0];
         this.zoneEnd = [0, 0];
         this.graph.selectionZone?.reset();
-        this.graph.dirty.selection = true;
     }
 
     onKeyUp(e: KeyboardEvent): void {
