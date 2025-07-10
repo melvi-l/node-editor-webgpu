@@ -1,8 +1,11 @@
 import Graph from "@/core/Graph";
-import { InteractionTool } from "./Tool";
-import { Vec2 } from "@/utils/math";
-import BaseTool from "./tools/BaseTool";
 import { RenderContext } from "@/renderer/type";
+
+import { InteractionTool } from "./Tool";
+import BaseTool from "./tools/BaseTool";
+
+import { scale, sub, Vec2 } from "@/utils/math";
+import { getType } from "@/utils/id";
 
 const UPDATE_INTERVAL = 1000 / 60;
 
@@ -40,25 +43,13 @@ export class Interactor {
 
     private initEvents() {
         const canvas = this.context.gpu.canvas;
-        canvas.addEventListener("pointermove", (e) => {
-            const rect = canvas.getBoundingClientRect();
-            this._mousePosition = [e.clientX - rect.left, e.clientY - rect.top];
+        canvas.addEventListener("pointermove", this.onPointerMove);
+        canvas.addEventListener("pointerdown", this.onPointerDown);
+        canvas.addEventListener("pointerup", this.onPointerUp);
 
-            this.mouseMoved = true;
-            this.currentTool?.onPointerMove?.(e);
-        });
-        canvas.addEventListener("pointerdown", (e) =>
-            this.currentTool?.onPointerDown?.(e),
-        );
-        canvas.addEventListener("pointerup", (e) =>
-            this.currentTool?.onPointerUp?.(e),
-        );
-
-        window.addEventListener("keydown", (e) =>
-            this.currentTool?.onKeyDown?.(e),
-        );
-        window.addEventListener("keyup", (e) => this.currentTool?.onKeyUp?.(e));
-        window.addEventListener("wheel", (e) => this.currentTool?.onWheel?.(e));
+        window.addEventListener("keydown", this.onKeyDown);
+        window.addEventListener("keyup", this.onKeyUp);
+        window.addEventListener("wheel", this.onWheel);
     }
 
     update = (() => {
@@ -77,6 +68,82 @@ export class Interactor {
     async pick(): Promise<string | null> {
         return this.picking.pick(...this.mousePosition);
     }
+
+    onPointerMove = (e: PointerEvent) => {
+        const rect = this.context.gpu.canvas.getBoundingClientRect();
+        this._mousePosition = [e.clientX - rect.left, e.clientY - rect.top];
+
+        this.mouseMoved = true;
+        this.currentTool?.onPointerMove?.(e);
+    };
+    onPointerDown = (e: PointerEvent) => {
+        this.currentTool?.onPointerDown?.(e);
+    };
+    onPointerUp = (e: PointerEvent) => {
+        this.currentTool?.onPointerUp?.(e);
+    };
+    onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "a") {
+            const size: Vec2 = [200, 100];
+            const node = this.graph.addNode({
+                position: sub(this.mousePosition, scale(size, 0.5)),
+                size,
+            });
+            this.graph.addHandle(node.id, { type: "input" });
+            this.graph.addHandle(node.id, { type: "output" });
+            return;
+        }
+
+        if (e.key === "I" || e.key === "O") {
+            if (this.hoveredId == null || getType(this.hoveredId) !== "node")
+                return;
+
+            const type = e.key === "I" ? "input" : "output";
+
+            this.graph.addHandle(this.hoveredId, { type });
+
+            return;
+        }
+        if (e.key === "i" || e.key === "o") {
+            if (this.hoveredId == null || getType(this.hoveredId) !== "node")
+                return;
+
+            const node = this.graph.getNode(this.hoveredId);
+            if (node == null) return;
+
+            const type = e.key === "i" ? "input" : "output";
+
+            const typeHandle = node.handles.filter(
+                (handle) => handle.type === type,
+            );
+            if (typeHandle.length === 0) return;
+
+            this.graph.removeHandle(typeHandle[typeHandle.length - 1].id, node);
+
+            return;
+        }
+        if (e.key === "Backspace" || e.key === "Delete") {
+            for (const selectedId of this.selectedIdSet) {
+                const type = getType(selectedId);
+                if (type === "node") {
+                    this.graph.removeNode(selectedId);
+                }
+                if (type === "edge") {
+                    this.graph.removeEdge(selectedId);
+                }
+            }
+        }
+        if (e.key === "Escape") {
+            this.selectedIdSet.clear();
+        }
+        this.currentTool?.onKeyDown?.(e);
+    };
+    onKeyUp = (e: KeyboardEvent) => {
+        this.currentTool?.onKeyUp?.(e);
+    };
+    onWheel = (e: WheelEvent) => {
+        this.currentTool?.onWheel?.(e);
+    };
 
     get mousePosition() {
         return this._mousePosition;

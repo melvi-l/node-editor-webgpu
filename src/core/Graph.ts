@@ -1,4 +1,4 @@
-import { Vec2 } from "@/utils/math";
+import { add, scale, Vec2 } from "@/utils/math";
 import Edge, { EdgeArgs } from "./Edge";
 import Handle, { HandleArgs } from "./Handle";
 import Node, { NodeArgs } from "./Node";
@@ -92,10 +92,7 @@ export default class Graph {
         return _edge;
     }
 
-    moveNode(nodeId: string, newPosition: Vec2) {
-        const node = this.nodes.get(nodeId);
-        if (!node) throw new Error(`Node ${nodeId} not found`);
-
+    moveNode(node: Node, newPosition: Vec2) {
         node.position = [...newPosition]; // might be in place later on
 
         for (const handle of node.handles) {
@@ -128,11 +125,10 @@ export default class Graph {
             })();
 
         if (node != null) {
-            const index = node.handles.findIndex((h) => h.id === handleId);
-            if (index >= 0) {
-                node.handles.splice(index, 1);
-                node.updateHandlesPosition();
-            }
+            node.handles = node.handles.filter((h) => h.id !== handleId);
+            console.log(node.handles.filter((h) => h.id !== handleId));
+
+            node.updateHandlesPosition();
 
             this._handleRegistry.delete(handleId);
         }

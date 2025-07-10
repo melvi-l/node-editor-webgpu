@@ -3,6 +3,7 @@ import { ResizableFloat32Array } from "./ResizableFloat32Array";
 import { RenderContext, Uniform } from "./type";
 import { computeMitter, direction, normal, Vec2, Vec4 } from "@/utils/math";
 import { toEdgeRender } from "./adapter/edgeAdapter";
+import Edge from "@/core/Edge";
 
 type EdgeRendererOptions = {
     width: number;
@@ -147,11 +148,12 @@ export default class EdgeRenderer {
         this.idToIndex.clear();
 
         for (const edge of graph.getAllEdge()) {
-            const edgeRender = toEdgeRender(graph, edge);
-            if (edgeRender == null) continue;
+            const startEnd = graph.computeEdgeStartEnd(edge);
+            if (startEnd == null) continue;
+            const path = edge.computePath(...startEnd);
 
             this.idToIndex.set(edge.id, i);
-            i += this.writeEdge(edgeRender, i);
+            i += this.writeEdge(edge, path, i);
         }
 
         this.instanceCount = i;
@@ -179,10 +181,11 @@ export default class EdgeRenderer {
             const edge = graph.getEdge(edgeId);
             if (!edge) continue;
 
-            const edgeRender = toEdgeRender(graph, edge);
-            if (edgeRender == null) continue;
+            const startEnd = graph.computeEdgeStartEnd(edge);
+            if (startEnd == null) continue;
+            const path = edge.computePath(...startEnd)
 
-            this.writeEdge(edgeRender, baseIndex, true);
+            this.writeEdge(edge, path, baseIndex, true);
         }
 
         graph.dirty.edges.clear();
@@ -205,11 +208,11 @@ export default class EdgeRenderer {
     }
 
     private writeEdge(
-        edge: EdgeRender,
+        { color }: Edge,
+        path: Vec2[],
         baseIndex: number,
         upload = false,
     ): number {
-        const { color, path } = edge;
         const array = this.instanceArray.data;
         let i = baseIndex;
 
