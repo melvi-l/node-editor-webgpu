@@ -1,3 +1,4 @@
+import { NodeStyle } from "@/core/Node";
 import { Vec4 } from "./math";
 
 type HexString = `#${string}`;
@@ -58,23 +59,72 @@ export function toRGBA(rgba1: Vec4): Vec4 {
     return rgba1.map((c) => Math.round(c * 255)) as Vec4;
 }
 
-const PALETTE: [number, number, number, number][] = [
-    colorRGBA([38, 70, 83, 255]),
-    colorRGBA([42, 157, 143, 255]),
-    colorRGBA([233, 196, 106, 255]),
-    colorRGBA([244, 162, 97, 255]),
-    colorRGBA([231, 111, 81, 255]),
+const NODE_STYLE_SAMPLE: NodeStyle[] = [
+    {
+        backgroundColor: {
+            default: colorRGBA([38, 70, 83, 255]),
+            selected: colorRGBA([48, 80, 93, 255]),
+        },
+        outlineColor: {
+            default: colorRGBA([0, 0, 0, 0]),
+            selected: colorRGBA([1, 1, 1, 1]),
+        },
+        outlineWidth: 2,
+    },
+
+    {
+        backgroundColor: {
+            default: colorRGBA([42, 157, 143, 255]),
+            selected: colorRGBA([52, 167, 153, 255]),
+        },
+        outlineColor: {
+            default: colorRGBA([0, 0, 0, 0]),
+            selected: colorRGBA([1, 1, 1, 1]),
+        },
+        outlineWidth: 2,
+    },
+    {
+        backgroundColor: {
+            default: colorRGBA([233, 196, 106, 255]),
+            selected: colorRGBA([243, 206, 116, 255]),
+        },
+        outlineColor: {
+            default: colorRGBA([0, 0, 0, 0]),
+            selected: colorRGBA([1, 1, 1, 1]),
+        },
+        outlineWidth: 2,
+    },
+    {
+        backgroundColor: {
+            default: colorRGBA([244, 162, 97, 255]),
+            selected: colorRGBA([254, 172, 107, 255]),
+        },
+        outlineColor: {
+            default: colorRGBA([0, 0, 0, 0]),
+            selected: colorRGBA([1, 1, 1, 1]),
+        },
+        outlineWidth: 2,
+    },
+    {
+        backgroundColor: {
+            default: colorRGBA([231, 111, 81, 255]),
+            selected: colorRGBA([241, 121, 91, 255]),
+        },
+        outlineColor: {
+            default: colorRGBA([0, 0, 0, 0]),
+            selected: colorRGBA([1, 1, 1, 1]),
+        },
+        outlineWidth: 2,
+    },
 ];
 
-export function getColorFromUUID(
-    uuid: string,
-): [number, number, number, number] {
+export function getNodeStyleFromUUID(uuid: string): NodeStyle {
     let hash = 0;
     for (let i = 0; i < uuid.length; i++) {
         const code = uuid.charCodeAt(i);
         hash = (hash * 31 + code) >>> 0;
     }
-    const index = hash % PALETTE.length;
+    const index = hash % NODE_STYLE_SAMPLE.length;
 
-    return PALETTE[index];
+    return NODE_STYLE_SAMPLE[index];
 }
