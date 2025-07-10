@@ -166,6 +166,11 @@ export default class Graph {
     getEdge(id: string): Edge | undefined {
         return this.edges.get(id);
     }
+    getEdgeByHandleId(handleId: string): Edge | undefined {
+        const edgeId = this._edgeRegistry.get(handleId);
+        if (edgeId == null) return;
+        return this.getEdge(edgeId);
+    }
     getElement(id: string): Node | Edge | Handle | undefined {
         const type = getType(id);
         if (type === "node") return this.getNode(id);
@@ -192,6 +197,43 @@ export default class Graph {
         return this.edges.values();
     }
 
+    computeEdgeStartEnd(edge: Edge): [Vec2, Vec2] | undefined {
+        const sourceNode = this.getNode(edge.source.nodeId);
+        const sourceHandle = this.getHandle(edge.source.handleId)?.handle;
+
+        if (sourceHandle == null || sourceNode == null) {
+            console.warn(
+                `Edge ${edge.id} referenced an unexistant ${sourceHandle == null ? "source handle" : "source node"}`,
+            );
+            return;
+        }
+        if (sourceHandle.position == null) {
+            console.warn(
+                `Unable to adapt for render edge ${edge.id} source handle ${sourceHandle.id}. Handle position should be compute before rendering`,
+            );
+            return;
+        }
+        const start = add(sourceNode.position, sourceHandle.position);
+
+        const targetNode = this.getNode(edge.target.nodeId);
+        const targetHandle = this.getHandle(edge.target.handleId)?.handle;
+
+        if (targetHandle == null || targetNode == null) {
+            console.warn(
+                `Edge ${edge.id} referenced an unexistant ${targetHandle == null ? "target handle" : "target node"}`,
+            );
+            return;
+        }
+        if (targetHandle.position == null) {
+            console.warn(
+                `Unable to adapt for render edge ${edge.id} target handle ${targetHandle.id}. Handle position should be compute before rendering`,
+            );
+            return;
+        }
+        const end = add(targetNode.position, targetHandle.position);
+
+        return [start, end];
+    }
     get dirty(): DirtyState {
         return this._dirty;
     }

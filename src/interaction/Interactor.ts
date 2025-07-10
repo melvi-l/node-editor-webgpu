@@ -103,13 +103,10 @@ export class Interactor {
     get hoveredId(): Readonly<string | null> {
         return this.context.state.hoveredId;
     }
-    get selectedId(): Readonly<string | null> {
-        return this.context.state.selectedId;
+    get selectedIdSet(): Set<string> {
+        return this.context.state.selectedIdSet;
     }
     setHoveredId(hoveredId: string | null) {
         this.context.state.hoveredId = hoveredId;
-    }
-    setSelectedId(selectedId: string | null) {
-        this.context.state.selectedId = selectedId;
     }
 }

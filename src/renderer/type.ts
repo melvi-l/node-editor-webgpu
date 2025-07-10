@@ -14,7 +14,7 @@ export interface RenderContext {
 
 export interface RenderState {
     hoveredId: string | null;
-    selectedId: string | null;
+    selectedIdSet: Set<string>;
 }
 
 export interface Uniform {

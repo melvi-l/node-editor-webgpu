@@ -2,14 +2,15 @@ import { getType } from "@/utils/id";
 import { InteractionTool } from "../Tool";
 import { Interactor } from "../Interactor";
 import Graph from "@/core/Graph";
-import { DragNodeTool } from "./DragNodeTool";
+import { DragTool } from "./DragTool";
 import ConnectTool from "./ConnectTool";
+import SelectionTool from "./SelectionTool";
 
 export default class BaseTool implements InteractionTool {
     constructor(
         private interactor: Interactor,
         private graph: Graph,
-    ) {}
+    ) { }
 
     async update() {
         const id = await this.interactor.pick();
@@ -19,31 +20,40 @@ export default class BaseTool implements InteractionTool {
         this.interactor.setHoveredId(id);
     }
 
-    async onPointerDown(e: PointerEvent) {
-        if (!this.interactor.hoveredId) return;
+    onPointerDown(e: PointerEvent) {
+        const { hoveredId, selectedIdSet } = this.interactor;
 
-        const type = getType(this.interactor.hoveredId);
-
-        if (type === "node") {
-            this.interactor.setTool(
-                new DragNodeTool(
-                    this.interactor,
-                    this.graph,
-                    this.interactor.hoveredId,
-                ),
-            );
-        } else if (type === "handle") {
-            this.interactor.setTool(
-                new ConnectTool(
-                    this.interactor,
-                    this.graph,
-                    this.interactor.hoveredId,
-                ),
-            );
-        } else {
+        if (hoveredId == null) {
+            selectedIdSet.clear();
             return;
         }
 
+        if (!selectedIdSet.has(hoveredId)) {
+            selectedIdSet.clear();
+        }
+
+        const type = getType(hoveredId);
+        if (type === "node") {
+            selectedIdSet.add(hoveredId);
+        }
+        if (type === "handle") {
+            this.interactor.setTool(
+                new ConnectTool(this.interactor, this.graph, hoveredId),
+            );
+        }
+
+        if (selectedIdSet.has(hoveredId)) {
+            this.interactor.setTool(new DragTool(this.interactor, this.graph));
+        }
+
         this.interactor.forwardEventToTool("onPointerDown", e);
+    }
+
+    onKeyDown(e: KeyboardEvent): void {
+        if (e.key === "Shift") {
+            this.interactor.setTool(
+                new SelectionTool(this.interactor, this.graph),
+            );
+        }
     }
 }

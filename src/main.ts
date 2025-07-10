@@ -28,7 +28,7 @@ async function main(...size: [number, number]) {
     const context = {
         gpu,
         viewport: new Viewport(gpu, gpu.canvasSize),
-        state: { hoveredId: null, selectedId: null },
+        state: { hoveredId: null, selectedIdSet: new Set<string>() },
     };
     const graph = new Graph();
 
