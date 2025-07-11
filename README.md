@@ -41,6 +41,9 @@ interaction handling (through tool abstractions manage by an interactor in [`int
 - A bidirectional mapping between internal numeric IDs and external unique IDs (`node-...`, `handle-...`, etc.) enables fast reverse lookups.
 - Picking reads a 1×1 pixel region at the mouse position and decodes the color to resolve the selected element.
 
+### Quad tree
+- Using a QuadTree to effectively pick multiple element in a selection zone.
+
 ### Edge Rendering
 
 - Edges are rendered with GPU instancing using stroke extansion in vertex shader.
@@ -109,7 +112,7 @@ interaction handling (through tool abstractions manage by an interactor in [`int
 - [ ] Node zIndexing (maybe just split instancing for selectedNode)
 - [ ] Complete interaction tool implementation (drag, select, connect)
 - [ ] Zoom and pan support in the viewport
-- [ ] Group selection & apropriate SelectionTool
+- [x] Group selection & apropriate SelectionTool
 - [ ] Edge picking
 - [ ] Minimap display
 - [ ] Rounded line cap
