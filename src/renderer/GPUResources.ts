@@ -7,9 +7,6 @@ export default class GPUResources {
     adapter!: GPUAdapter;
     canvas: HTMLCanvasElement;
 
-    private encoder!: GPUCommandEncoder;
-    private pass!: GPURenderPassEncoder;
-
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
     }
@@ -126,26 +123,37 @@ export default class GPUResources {
         });
     }
 
-    beginFrame(): GPURenderPassEncoder {
-        this.encoder = this.device.createCommandEncoder();
+    beginFrame(descriptor?: GPURenderPassDescriptor): {
+        encoder: GPUCommandEncoder;
+        pass: GPURenderPassEncoder;
+    } {
+        const encoder = this.device.createCommandEncoder();
         const view = this.context.getCurrentTexture().createView();
 
-        this.pass = this.encoder.beginRenderPass({
-            colorAttachments: [
-                {
-                    view,
-                    clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
-                    loadOp: "clear",
-                    storeOp: "store",
-                },
-            ],
-        });
+        const pass = encoder.beginRenderPass(
+            descriptor ?? {
+                colorAttachments: [
+                    {
+                        view,
+                        clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1 },
+                        loadOp: "clear",
+                        storeOp: "store",
+                    },
+                ],
+            },
+        );
 
-        return this.pass;
+        return { encoder, pass };
     }
-    endFrame(): void {
-        this.pass.end();
-        this.device.queue.submit([this.encoder.finish()]);
+    endFrame({
+        encoder,
+        pass,
+    }: {
+        encoder: GPUCommandEncoder;
+        pass: GPURenderPassEncoder;
+    }): void {
+        pass.end();
+        this.device.queue.submit([encoder.finish()]);
     }
 
     get canvasSize(): ViewportSize {

@@ -64,9 +64,7 @@ export class PickingManager {
     }
 
     async pick(x: number, y: number): Promise<string | null> {
-        const commandEncoder = this.context.gpu.device.createCommandEncoder();
-
-        const pass = commandEncoder.beginRenderPass({
+        const { encoder, pass } = this.context.gpu.beginFrame({
             colorAttachments: [
                 {
                     view: this.pickingView,
@@ -81,7 +79,7 @@ export class PickingManager {
         this.renderer.render(pass);
         pass.end();
 
-        commandEncoder.copyTextureToBuffer(
+        encoder.copyTextureToBuffer(
             {
                 texture: this.pickingTexture,
                 origin: { x, y },
@@ -97,7 +95,7 @@ export class PickingManager {
             },
         );
 
-        this.context.gpu.device.queue.submit([commandEncoder.finish()]);
+        this.context.gpu.device.queue.submit([encoder.finish()]);
         await this.context.gpu.device.queue.onSubmittedWorkDone();
 
         await this.readBuffer.mapAsync(GPUMapMode.READ);

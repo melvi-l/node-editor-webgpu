@@ -52,7 +52,7 @@ export class DebugTextureRenderer {
             { binding: 1, resource: sampler },
         ]);
 
-        this.pipeline = this.context.gpu.device.createRenderPipeline({
+        this.pipeline = this.context.gpu.createRenderPipeline({
             layout: this.context.gpu.device.createPipelineLayout({
                 bindGroupLayouts: [bindGroupLayout],
             }),

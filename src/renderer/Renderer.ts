@@ -35,7 +35,7 @@ export default class Renderer {
     }
 
     render() {
-        const pass = this.context.gpu.beginFrame();
+        const { encoder, pass } = this.context.gpu.beginFrame();
 
         this.edgeRenderer.render(pass);
         this.nodeRenderer.render(pass);
@@ -45,7 +45,7 @@ export default class Renderer {
             this.debugRenderer.render(pass);
         }
 
-        this.context.gpu.endFrame();
+        this.context.gpu.endFrame({ encoder, pass });
     }
 
     syncGraph(graph: Graph) {

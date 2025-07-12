@@ -1,9 +1,9 @@
 import Graph from "@/core/Graph";
-import { ResizableFloat32Array } from "./ResizableFloat32Array";
-import { RenderContext, Uniform } from "./type";
-import { computeMitter, direction, normal, Vec2, Vec4 } from "@/utils/math";
-
 import Edge from "@/core/Edge";
+import { RenderContext, Uniform } from "./type";
+import { ResizableFloat32Array } from "./ResizableFloat32Array";
+
+import { computeMitter, direction, normal, Vec2, Vec4 } from "@/utils/math";
 
 type EdgeRendererOptions = {
     width: number;
@@ -160,7 +160,7 @@ export default class EdgeRenderer {
         this.instanceArray.ensureCapacity(i * 14);
 
         const slice = this.instanceArray.used;
-        this.context.gpu.device.queue.writeBuffer(
+        this.context.gpu.updateSubBuffer(
             this.instanceBuffer,
             0,
             slice.buffer,
@@ -250,7 +250,7 @@ export default class EdgeRenderer {
             array[base + 13] = miterFactor;
 
             if (upload) {
-                this.context.gpu.device.queue.writeBuffer(
+                this.context.gpu.updateSubBuffer(
                     this.instanceBuffer,
                     base * 4,
                     array.buffer,

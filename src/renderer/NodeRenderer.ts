@@ -146,7 +146,7 @@ export default class NodeRenderer {
         this.instanceCount = i;
 
         const slice = this.instanceArray.used;
-        this.context.gpu.device.queue.writeBuffer(
+        this.context.gpu.updateSubBuffer(
             this.instanceBuffer,
             0,
             slice.buffer,

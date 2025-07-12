@@ -3,7 +3,6 @@ import Node, { NodeArgs } from "./Node";
 import Handle, { HandleArgs } from "./Handle";
 import Edge, { EdgeArgs } from "./Edge";
 
-
 import { add, Vec2 } from "@/utils/math";
 import { getType } from "@/utils/id";
 

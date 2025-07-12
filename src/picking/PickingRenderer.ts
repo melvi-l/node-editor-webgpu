@@ -141,9 +141,8 @@ export class PickingRenderer {
         this.instanceCount = i;
 
         const slice = this.instanceArray.used;
-        this.context.gpu.device.queue.writeBuffer(
+        this.context.gpu.updateSubBuffer(
             this.instanceBuffer,
-
             0,
             slice.buffer,
             slice.byteOffset,
@@ -180,7 +179,7 @@ export class PickingRenderer {
             array.set(node.size, base + 2);
             array.set([r, g, b], base + 4);
 
-            this.context.gpu.device.queue.writeBuffer(
+            this.context.gpu.updateSubBuffer(
                 this.instanceBuffer,
                 base * 4,
                 array.buffer,
@@ -209,7 +208,7 @@ export class PickingRenderer {
 
                 array.set([hr, hg, hb], hbase + 4);
 
-                this.context.gpu.device.queue.writeBuffer(
+                this.context.gpu.updateSubBuffer(
                     this.instanceBuffer,
                     hbase * 4,
                     array.buffer,
