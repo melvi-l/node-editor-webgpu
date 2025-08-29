@@ -24,14 +24,6 @@ export default class Graph {
     >(); // handle in node -> registry for getting nodeId from handleId
     private _edgeRegistry = new Map<string, string>(); // edge outside of node.handles -> registry for getting edgeId from handleId
 
-    private _dirty: DirtyState = {
-        selection: false,
-        global: false,
-        nodes: new Set(),
-        handles: new Set(),
-        edges: new Set(),
-    };
-
     constructor() {}
 
     init(nodeArray: Node[], edgeArray: Edge[]) {
@@ -47,8 +39,6 @@ export default class Graph {
                 }),
             ),
         );
-
-        this._dirty.global = true;
     }
 
     addNode(node: Node | NodeArgs): Node {
@@ -58,8 +48,6 @@ export default class Graph {
             throw new Error(`Node ${_node.id} already exists.`);
 
         this.nodes.set(_node.id, _node);
-
-        this._dirty.global = true;
 
         return _node;
     }
@@ -79,7 +67,6 @@ export default class Graph {
             nodeId,
         });
 
-        this._dirty.global = true;
         return _handle;
     }
     addEdge(edge: Edge | EdgeArgs): Edge {
@@ -93,7 +80,6 @@ export default class Graph {
         this._edgeRegistry.set(_edge.source.handleId, _edge.id);
         this._edgeRegistry.set(_edge.target.handleId, _edge.id);
 
-        this._dirty.global = true;
         return _edge;
     }
 
@@ -104,9 +90,7 @@ export default class Graph {
             const edgeId = this._edgeRegistry.get(handle.id);
             if (edgeId == null) continue;
 
-            this._dirty.edges.add(edgeId);
         }
-        this._dirty.nodes.add(node.id);
     }
 
     removeNode(nodeId: string) {
@@ -118,7 +102,6 @@ export default class Graph {
         }
 
         this.nodes.delete(nodeId);
-        this._dirty.global = true;
     }
     removeHandle(handleId: string, _node?: Node) {
         const node =
@@ -141,8 +124,6 @@ export default class Graph {
         if (edgeId != null) {
             this.removeEdge(edgeId);
         }
-
-        this._dirty.global = true;
     }
     removeEdge(edgeId: string) {
         this.edges.delete(edgeId);
@@ -154,7 +135,6 @@ export default class Graph {
         }
         this.edges.delete(edgeId);
 
-        this._dirty.global = true;
     }
 
     getNode(id: string): Node | undefined {
@@ -233,8 +213,5 @@ export default class Graph {
         const end = add(targetNode.position, targetHandle.position);
 
         return [start, end];
-    }
-    get dirty(): DirtyState {
-        return this._dirty;
     }
 }

@@ -180,18 +180,15 @@ export class Interactor {
         return this.context.state.selectedIdSet.values();
     }
     selectId(selectedId: string) {
-        this.graph.dirty.global = true;
         return this.context.state.selectedIdSet.add(selectedId);
     }
     unselectId(selectedId: string) {
-        this.graph.dirty.global = true;
         return this.context.state.selectedIdSet.delete(selectedId);
     }
     isSelected(id: string) {
         return this.context.state.selectedIdSet.has(id);
     }
     clearSelectedIdSet() {
-        this.graph.dirty.global = true;
         return this.context.state.selectedIdSet.clear();
     }
     setHoveredId(hoveredId: string | null) {

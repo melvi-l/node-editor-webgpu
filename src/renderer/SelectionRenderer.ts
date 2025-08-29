@@ -106,7 +106,6 @@ export default class SelectionRenderer {
             );
             return;
         }
-        if (graph.dirty.selection === false) return;
 
         const [x, y] = graph.selectionZone.position;
         const [w, h] = graph.selectionZone.size;
@@ -115,8 +114,6 @@ export default class SelectionRenderer {
             this.uniform.buffer,
             new Float32Array([x, y, w, h]),
         );
-
-        graph.dirty.selection = false;
     }
 
     render(pass: GPURenderPassEncoder) {

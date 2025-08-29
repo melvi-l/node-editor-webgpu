@@ -91,7 +91,6 @@ export default class SelectionTool implements InteractionTool {
         this.zoneEnd = this.interactor.mousePosition;
 
         this.graph.selectionZone?.setPosition(this.zoneStart);
-        this.graph.dirty.selection = true;
     }
 
     onPointerMove(e: PointerEvent): void {
@@ -102,7 +101,6 @@ export default class SelectionTool implements InteractionTool {
         const size = sub(this.zoneEnd, this.zoneStart);
 
         this.graph.selectionZone?.setSize(size);
-        this.graph.dirty.selection = true;
 
         this.quadTree.pickArea({
                 position: this.zoneStart,
