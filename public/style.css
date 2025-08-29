@@ -8,4 +8,5 @@ body {
   width: 100%;
   display: grid;
   place-items: center;
+  background: #1f1f1f;
 }
