@@ -1,9 +1,10 @@
 import { scale, Vec2 } from "@/utils/math";
+import { Zone } from "./type";
+import { AreaPicker, PositionPicker } from "./Picker";
 
-type Zone = { position: Vec2; size: Vec2 };
 type Item<T> = { bounds: Zone; data: T };
 
-export class QuadTree<T> {
+export class QuadTree<T> implements PositionPicker<T>, AreaPicker<T>  {
     private items: Item<T>[] = [];
     private children: QuadTree<T>[] | null = null;
     private readonly bounds: Zone;
@@ -17,8 +18,16 @@ export class QuadTree<T> {
         this.depth = depth;
     }
 
+    pickPosition(position: Vec2): T[] {
+        return this.query(position, this.isInside, [])
+    }
+
+    pickArea(area: Zone):T[] {
+        return this.query(area, this.isIntersecting, [])
+    }
+
     insert(item: Item<T>): boolean {
-        if (!this.intersects(this.bounds, item.bounds)) return false;
+        if (!this.isIntersecting(item.bounds, this.bounds)) return false;
 
         if (!this.children && this.items.length < this.capacity) {
             this.items.push(item);
@@ -34,23 +43,24 @@ export class QuadTree<T> {
         return false;
     }
 
-    query(area: Zone, found: T[] = []): T[] {
-        if (!this.intersects(this.bounds, area)) return found;
+    query<U>(selector: U, testingFn: (s: U, bound: Zone) => boolean, found: T[]): T[] {
+        if (!testingFn(selector, this.bounds)) return found;
 
         for (const item of this.items) {
-            if (this.intersects(item.bounds, area)) {
+            if (testingFn(selector, this.bounds)) {
                 found.push(item.data);
             }
         }
 
         if (this.children) {
             for (const child of this.children) {
-                child.query(area, found);
+                child.query<U>(selector, testingFn, found);
             }
         }
 
         return found;
     }
+
 
     clear() {
         this.items = [];
@@ -85,10 +95,17 @@ export class QuadTree<T> {
         ];
     }
 
-    private intersects(
+    private isIntersecting(
         { position: [ax, ay], size: [aw, ah] }: Zone,
         { position: [bx, by], size: [bw, bh] }: Zone,
     ): boolean {
         return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+    }
+
+    private isInside(
+        [ax, ay]: Vec2,
+        { position: [bx, by], size: [bw, bh] }: Zone
+    ): boolean {
+        return ax < bx + bw && ax > bx && ay < by + bh && ay > by
     }
 }

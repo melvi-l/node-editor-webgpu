@@ -104,8 +104,7 @@ export default class SelectionTool implements InteractionTool {
         this.graph.selectionZone?.setSize(size);
         this.graph.dirty.selection = true;
 
-        this.quadTree
-            .query({
+        this.quadTree.pickArea({
                 position: this.zoneStart,
                 size,
             })
