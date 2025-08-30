@@ -15,7 +15,7 @@ export default class BaseTool implements InteractionTool {
     ) {}
 
     async update() {
-        const id = await this.interactor.pick();
+        const id = await this.interactor.pickPosition();
         if (id === this.interactor.hoveredId) return;
         this.interactor.setHoveredId(id);
     }

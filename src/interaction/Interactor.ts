@@ -6,6 +6,8 @@ import BaseTool from "./tools/BaseTool";
 
 import { scale, sub, Vec2 } from "@/utils/math";
 import { getType } from "@/utils/id";
+import { AreaPicker, PositionPicker } from "@/picking/Picker";
+import { Zone } from "@/picking/type";
 
 const UPDATE_INTERVAL = 1000 / 60;
 
@@ -22,7 +24,7 @@ type PickingManager = {
 };
 
 export class Interactor {
-    private picking: PickingManager;
+    private picker: PositionPicker<string> & AreaPicker<string>;
     private graph: Graph;
     private context: RenderContext;
 
@@ -32,8 +34,8 @@ export class Interactor {
     private _mousePosition: Vec2 = [0, 0];
     private mouseMoved = false;
 
-    constructor(picking: PickingManager, graph: Graph, context: RenderContext) {
-        this.picking = picking;
+    constructor(picker: PositionPicker<string> & AreaPicker<string>, graph: Graph, context: RenderContext) {
+        this.picker = picker;
         this.graph = graph;
         this.context = context;
 
@@ -66,8 +68,12 @@ export class Interactor {
         };
     })();
 
-    async pick(): Promise<string | null> {
-        return this.picking.pick(...this.mousePosition);
+    pickPosition(): string {
+        return this.graph.getClosestElement(this.picker.pickPosition(this.mousePosition));
+    }
+
+    pickArea(area: Zone): string[] {
+        return this.picker.pickArea(area)
     }
 
     onPointerMove = (e: PointerEvent) => {

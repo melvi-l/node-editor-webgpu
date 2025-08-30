@@ -4,8 +4,8 @@ import Renderer from "@/renderer/Renderer";
 import { colorHEX } from "./utils/color";
 import { Interactor } from "./interaction/Interactor";
 import Viewport from "./renderer/Viewport";
-import { PickingManager } from "./picking/PickingManager";
 import { DebugTextureRenderer } from "./debug/DebugRenderer";
+import { QuadTree } from "./picking/QuadTree";
 
 async function main(...size: [number, number]) {
     if (!navigator.gpu) {
@@ -32,8 +32,10 @@ async function main(...size: [number, number]) {
     };
     const graph = new Graph();
 
-    const pickingManager = new PickingManager(context, graph);
-    await pickingManager.init();
+    const picker = new QuadTree<string>({
+            position: [-10_000, -10_000],
+            size: [20_000, 20_000],
+        });
 
     // Debug
     let debugRenderer = undefined;
@@ -45,7 +47,7 @@ async function main(...size: [number, number]) {
     const renderer = new Renderer(context, debugRenderer);
     await renderer.init();
 
-    const interactor = new Interactor(pickingManager, graph, context);
+    const interactor = new Interactor(picker, graph, context);
 
     const g0 = colorHEX("#555");
     const g1 = colorHEX("#777");

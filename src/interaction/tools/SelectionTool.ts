@@ -72,8 +72,8 @@ export default class SelectionTool implements InteractionTool {
         }
     }
 
-    async update() {
-        const id = await this.interactor.pick();
+    update() {
+        const id = this.interactor.pickPosition();
         if (id === this.interactor.hoveredId) return;
         this.interactor.setHoveredId(id);
     }

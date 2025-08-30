@@ -214,4 +214,9 @@ export default class Graph {
 
         return [start, end];
     }
+
+    getClosestElement(indexArray: string[]) {
+        console.warn("unimplemented method getClosestElement");
+        return indexArray?.[0]
+    }
 }

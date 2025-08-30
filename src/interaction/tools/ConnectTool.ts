@@ -38,8 +38,8 @@ export default class ConnectTool implements InteractionTool {
         // TODO anim
     }
 
-    async onPointerUp(e: PointerEvent) {
-        const targetId = await this.interactor.pick();
+    onPointerUp(e: PointerEvent) {
+        const targetId = this.interactor.pickPosition();
         if (!targetId || getType(targetId) !== "handle") {
             this.interactor.resetTool();
             return;
