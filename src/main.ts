@@ -37,14 +37,7 @@ async function main(...size: [number, number]) {
             size: [20_000, 20_000],
         });
 
-    // Debug
-    let debugRenderer = undefined;
-    if (false) {
-        debugRenderer = new DebugTextureRenderer(context);
-        debugRenderer.init(pickingManager.texture);
-    }
-
-    const renderer = new Renderer(context, debugRenderer);
+    const renderer = new Renderer(context);
     await renderer.init();
 
     const interactor = new Interactor(picker, graph, context);

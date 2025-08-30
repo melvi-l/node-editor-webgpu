@@ -6,8 +6,6 @@ import SelectionRenderer from "./SelectionRenderer";
 import NodeRenderer from "./NodeRenderer";
 import EdgeRenderer from "./EdgeRenderer";
 
-import { DebugTextureRenderer } from "@/debug/DebugRenderer";
-
 export default class Renderer {
     private context: RenderContext;
 
@@ -16,11 +14,8 @@ export default class Renderer {
     private nodeRenderer: NodeRenderer;
     private edgeRenderer: EdgeRenderer;
 
-    private debugRenderer?: DebugTextureRenderer;
-
-    constructor(context: RenderContext, debugRenderer?: DebugTextureRenderer) {
+    constructor(context: RenderContext) {
         this.context = context;
-        this.debugRenderer = debugRenderer;
         this.selectionRenderer = new SelectionRenderer(this.context);
         this.nodeRenderer = new NodeRenderer(this.context);
         this.edgeRenderer = new EdgeRenderer(this.context);
@@ -40,10 +35,6 @@ export default class Renderer {
         this.edgeRenderer.render(pass);
         this.nodeRenderer.render(pass);
         this.selectionRenderer.render(pass);
-
-        if (this.debugRenderer != null) {
-            this.debugRenderer.render(pass);
-        }
 
         this.context.gpu.endFrame({ encoder, pass });
     }
