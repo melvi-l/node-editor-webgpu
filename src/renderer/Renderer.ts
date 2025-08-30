@@ -1,10 +1,12 @@
 import Graph from "@/core/Graph";
 
-import { RenderContext, ViewportSize } from "./type";
+import { RenderContext } from "./type";
 
 import SelectionRenderer from "./SelectionRenderer";
+
 import NodeRenderer from "./NodeRenderer";
 import EdgeRenderer from "./EdgeRenderer";
+import HandleRenderer from "./HandleRenderer";
 
 import { RenderQueue } from "./RenderQueue";
 
@@ -14,6 +16,7 @@ export default class Renderer {
     private selectionRenderer: SelectionRenderer;
 
     private nodeRenderer: NodeRenderer;
+    private handleRenderer: HandleRenderer;
     private edgeRenderer: EdgeRenderer;
 
     private renderQueue: RenderQueue = new RenderQueue();
@@ -22,6 +25,7 @@ export default class Renderer {
         this.context = context;
         this.selectionRenderer = new SelectionRenderer(this.context);
         this.nodeRenderer = new NodeRenderer(this.context);
+        this.handleRenderer = new HandleRenderer(this.context);
         this.edgeRenderer = new EdgeRenderer(this.context);
     }
 
@@ -29,6 +33,7 @@ export default class Renderer {
         await Promise.all([
             this.selectionRenderer.init(),
             this.nodeRenderer.init(),
+            this.handleRenderer.init(),
             this.edgeRenderer.init(),
         ]);
     }
@@ -47,6 +52,7 @@ export default class Renderer {
     syncGraph(graph: Graph) {
         for (const node of graph.getAllNode()) {
             this.nodeRenderer.enqueue(node, this.renderQueue);
+            this.handleRenderer.enqueue(node, this.renderQueue);
         }
         // this.edgeRenderer.sync(graph);
         this.selectionRenderer.sync(graph);

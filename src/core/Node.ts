@@ -33,7 +33,7 @@ export default class Node implements Hoverable, Selectable {
         this.handles = handles ?? [];
     }
 
-    updateHandlesPosition() {
+    updateHandlesLocalPosition() {
         const inputArray = this.handles.filter(
             (handle) => handle.type === "input",
         );
