@@ -17,9 +17,6 @@ export default class Handle {
     // internally updated
     position?: Vec2;
 
-    isHovered: boolean = false;
-    isSelected: boolean = false;
-
     constructor({ type, color, radius }: HandleArgs) {
         this.id = id("handle");
         this.type = type;

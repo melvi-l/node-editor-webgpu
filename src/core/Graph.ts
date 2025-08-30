@@ -24,11 +24,11 @@ export default class Graph {
     >(); // handle in node -> registry for getting nodeId from handleId
     private _edgeRegistry = new Map<string, string>(); // edge outside of node.handles -> registry for getting edgeId from handleId
 
-    constructor() {}
+    constructor() { }
 
     init(nodeArray: Node[], edgeArray: Edge[]) {
         this.nodes = new Map(nodeArray.map((node) => [node.id, node]));
-        this.nodes.forEach((node) => node.updateHandlesPosition());
+        this.nodes.forEach((node) => node.updateHandlesLocalPosition());
         this.edges = new Map(edgeArray.map((edge) => [edge.id, edge]));
         this._handleRegistry.clear();
         this.nodes.forEach((node) =>
@@ -60,7 +60,7 @@ export default class Graph {
         const node = this.getNode(nodeId);
         if (!node) throw new Error(`Node ${nodeId} not found`);
         node.handles.push(_handle);
-        node.updateHandlesPosition();
+        node.updateHandlesLocalPosition();
 
         this._handleRegistry.set(_handle.id, {
             handle: _handle,
@@ -85,12 +85,6 @@ export default class Graph {
 
     moveNode(node: Node, newPosition: Vec2) {
         node.position = [...newPosition]; // might be in place later on
-
-        for (const handle of node.handles) {
-            const edgeId = this._edgeRegistry.get(handle.id);
-            if (edgeId == null) continue;
-
-        }
     }
 
     removeNode(nodeId: string) {
@@ -115,7 +109,7 @@ export default class Graph {
         if (node != null) {
             node.handles = node.handles.filter((h) => h.id !== handleId);
 
-            node.updateHandlesPosition();
+            node.updateHandlesLocalPosition();
 
             this._handleRegistry.delete(handleId);
         }
@@ -134,7 +128,6 @@ export default class Graph {
             this._edgeRegistry.delete(edge.target.handleId);
         }
         this.edges.delete(edgeId);
-
     }
 
     getNode(id: string): Node | undefined {
@@ -216,7 +209,6 @@ export default class Graph {
     }
 
     getClosestElement(indexArray: string[]) {
-        console.warn("unimplemented method getClosestElement");
-        return indexArray?.[0]
+        return indexArray?.[0];
     }
 }
