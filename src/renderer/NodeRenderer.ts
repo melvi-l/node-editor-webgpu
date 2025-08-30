@@ -1,20 +1,23 @@
-import Graph from "@/core/Graph";
-import { RenderContext } from "./type";
+import { RenderContext, Uniform } from "./type";
 
-import { ResizableFloat32Array } from "./ResizableFloat32Array";
+import Node from "@/core/Node";
+import { Vec2, Vec4 } from "@/utils/math";
 
-import { add } from "@/utils/math";
+import { Layer, makeSortKey, RenderQueue } from "./RenderQueue";
 
-const bufferSize = 32 * 1_000_000; // instanceSize * maxInstanceCount
+type DrawNode = {
+    position: Vec2;
+    size: Vec2;
+    color: Vec4;
+};
+
+const _data = new Float32Array(8);
 
 export default class NodeRenderer {
     private context: RenderContext;
     private pipeline!: GPURenderPipeline;
     private vertexBuffer!: GPUBuffer;
-    private instanceBuffer!: GPUBuffer;
-    private instanceCount = 0;
-    private instanceArray = new ResizableFloat32Array();
-    private idToIndex = new Map<string, number>();
+    private uniform!: Uniform;
 
     constructor(context: RenderContext) {
         this.context = context;
@@ -30,11 +33,16 @@ export default class NodeRenderer {
             GPUBufferUsage.VERTEX,
         );
 
-        const shader = await this.context.gpu.loadShaderModule("unified");
+        this.uniform = this.initUniform();
+
+        const shader = await this.context.gpu.loadShaderModule("node");
 
         this.pipeline = this.context.gpu.createRenderPipeline({
             layout: this.context.gpu.device.createPipelineLayout({
-                bindGroupLayouts: [this.context.viewport.bindGroupLayout],
+                bindGroupLayouts: [
+                    this.context.viewport.bindGroupLayout,
+                    this.uniform.bindGroupLayout,
+                ],
             }),
             vertex: {
                 module: shader,
@@ -48,28 +56,6 @@ export default class NodeRenderer {
                                 offset: 0,
                                 format: "float32x2",
                             },
-                        ],
-                    },
-                    {
-                        arrayStride: 36,
-                        stepMode: "instance",
-                        attributes: [
-                            {
-                                shaderLocation: 1,
-                                offset: 0,
-                                format: "float32x2",
-                            }, // position
-                            {
-                                shaderLocation: 2,
-                                offset: 8,
-                                format: "float32x2",
-                            }, // size or radius
-                            {
-                                shaderLocation: 3,
-                                offset: 16,
-                                format: "float32x4",
-                            }, // color
-                            { shaderLocation: 4, offset: 32, format: "uint32" }, // kind
                         ],
                     },
                 ],
@@ -96,133 +82,82 @@ export default class NodeRenderer {
                 ],
             },
         });
-
-        this.instanceBuffer = this.context.gpu.initBuffer(
-            bufferSize,
-            GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        );
     }
 
-    sync(graph: Graph) {
-        this.instanceCount = 0;
-        this.instanceArray.ensureCapacity(
-            (graph.nodeCount + graph.handleCount + graph.edgeCount) * 9 * 10,
-        );
+    enqueue(node: Node, renderQueue: RenderQueue) {
+        const drawNode = this.toDraw(node);
 
-        const array = this.instanceArray.data;
-        this.idToIndex.clear();
-        let i = 0;
+        const key = makeSortKey(Layer.Default, 0);
 
-        for (const node of graph.getAllNode()) {
-            this.idToIndex.set(node.id, i);
+        renderQueue.push({
+            key,
+            execute: (pass) => this.render(pass, drawNode),
+        });
+    }
 
-            const base = i * 9;
-            array.set(node.position, base + 0);
-            array.set(node.size, base + 2);
-            array.set(
-                node.style.backgroundColor[
-                    this.context.state.selectedIdSet.has(node.id)
-                        ? "selected"
-                        : "default"
-                ],
-                base + 4,
-            );
-            array[base + 8] = 0; // kind = node
-            i++;
+    toDraw(node: Node): DrawNode {
+        if (node.isSelected)
+            return {
+                position: node.position,
+                size: node.size,
+                color: node.style.backgroundColor.selected,
+            };
+        return {
+            position: node.position,
+            size: node.size,
+            color: node.style.backgroundColor.default,
+        };
+    }
 
-            for (const handle of node.handles) {
-                if (!handle.position) continue;
-                const hbase = i * 9;
-                const worldPosition = add(node.position, handle.position);
-
-                array.set(worldPosition, hbase + 0);
-                array.set([handle.radius, 0], hbase + 2);
-                array.set(handle.color, hbase + 4);
-                array[hbase + 8] = 1; // kind = handle
-                i++;
-            }
-        }
-
-        this.instanceCount = i;
-
-        const slice = this.instanceArray.used;
-        this.context.gpu.updateSubBuffer(
-            this.instanceBuffer,
+    toUniformBindGroup(drawNode: DrawNode): GPUBindGroup {
+        _data.set(
+            [...drawNode.position, ...drawNode.size, ...drawNode.color],
             0,
-            slice.buffer,
-            slice.byteOffset,
-            slice.byteLength,
         );
+        const buffer = this.context.gpu.createBuffer(
+            _data,
+            GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        );
+        return this.context.gpu.createBindGroup(this.uniform.bindGroupLayout, [
+            { binding: 0, resource: buffer },
+        ]);
     }
 
-    syncPartial(graph: Graph) {
-        const dirtyNodeIds = graph.dirty.nodes;
-        if (dirtyNodeIds.size === 0) return;
-
-        const array = this.instanceArray.data;
-
-        for (const nodeId of dirtyNodeIds) {
-            const baseIndex = this.idToIndex.get(nodeId);
-            if (baseIndex == null) continue;
-
-            const node = graph.getNode(nodeId);
-            if (node == null) continue;
-
-            const base = baseIndex * 9;
-            array.set(node.position, base + 0);
-            array.set(node.size, base + 2);
-            array.set(
-                node.style.backgroundColor[
-                    this.context.state.selectedIdSet.has(node.id)
-                        ? "selected"
-                        : "default"
-                ],
-                base + 4,
-            );
-            array[base + 8] = 0; // kind = node
-
-            const nodeSlice = array.subarray(base, base + 9);
-            this.context.gpu.updateSubBuffer(
-                this.instanceBuffer,
-                base * 4,
-                nodeSlice.buffer,
-                nodeSlice.byteOffset,
-                nodeSlice.byteLength,
-            );
-
-            for (let h = 0; h < node.handles.length; h++) {
-                const handle = node.handles[h];
-                if (!handle.position) continue;
-
-                const hbase = (baseIndex + 1 + h) * 9;
-
-                const worldPosition = add(node.position, handle.position);
-                array.set(worldPosition, hbase + 0);
-                array.set([handle.radius, 0], hbase + 2);
-                array.set(handle.color, hbase + 4);
-                array[hbase + 8] = 1;
-
-                const handleSlice = array.subarray(hbase, hbase + 9);
-                this.context.gpu.updateSubBuffer(
-                    this.instanceBuffer,
-                    hbase * 4,
-                    handleSlice.buffer,
-                    handleSlice.byteOffset,
-                    handleSlice.byteLength,
-                );
-            }
+    initUniform(): Uniform {
+        if (this.uniform != null) {
+            console.warn("init already instanciated uniform");
         }
-
-        graph.dirty.nodes.clear();
+        const buffer = this.context.gpu.createBuffer(
+            _data,
+            GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        );
+        const bindGroupLayout = this.context.gpu.device.createBindGroupLayout({
+            label: "node",
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                    buffer: {
+                        type: "uniform",
+                    },
+                },
+            ],
+        });
+        const bindGroup = this.context.gpu.createBindGroup(bindGroupLayout, [
+            { binding: 0, resource: buffer },
+        ]);
+        return {
+            buffer,
+            bindGroupLayout,
+            bindGroup,
+        };
     }
 
-    render(pass: GPURenderPassEncoder) {
-        if (this.instanceCount === 0) return;
-
+    render(pass: GPURenderPassEncoder, drawNode: DrawNode) {
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.context.viewport.bindGroup);
+        pass.setBindGroup(1, this.toUniformBindGroup(drawNode));
         pass.setVertexBuffer(0, this.vertexBuffer);
-        pass.setVertexBuffer(1, this.instanceBuffer);
-        pass.draw(6, this.instanceCount);
+        pass.draw(6, 1);
     }
 }

@@ -6,6 +6,8 @@ import SelectionRenderer from "./SelectionRenderer";
 import NodeRenderer from "./NodeRenderer";
 import EdgeRenderer from "./EdgeRenderer";
 
+import { RenderQueue } from "./RenderQueue";
+
 export default class Renderer {
     private context: RenderContext;
 
@@ -13,6 +15,8 @@ export default class Renderer {
 
     private nodeRenderer: NodeRenderer;
     private edgeRenderer: EdgeRenderer;
+
+    private renderQueue: RenderQueue = new RenderQueue();
 
     constructor(context: RenderContext) {
         this.context = context;
@@ -32,24 +36,20 @@ export default class Renderer {
     render() {
         const { encoder, pass } = this.context.gpu.beginFrame();
 
-        this.edgeRenderer.render(pass);
-        this.nodeRenderer.render(pass);
+        this.renderQueue.flush(pass);
+        this.renderQueue.clear();
+
         this.selectionRenderer.render(pass);
 
         this.context.gpu.endFrame({ encoder, pass });
     }
 
     syncGraph(graph: Graph) {
-        this.selectionRenderer.sync(graph);
-        if (graph.dirty.global === false) {
-            this.nodeRenderer.syncPartial(graph);
-            this.edgeRenderer.syncPartial(graph);
-            return;
+        for (const node of graph.getAllNode()) {
+            this.nodeRenderer.enqueue(node, this.renderQueue);
         }
-        this.nodeRenderer.sync(graph);
-        this.edgeRenderer.sync(graph);
-
-        graph.dirty.global = false;
+        // this.edgeRenderer.sync(graph);
+        this.selectionRenderer.sync(graph);
     }
 
     resize(size: ViewportSize) {
