@@ -1,9 +1,12 @@
 import GPUResources from "./GPUResources";
 import Viewport from "./Viewport";
 
-export interface ViewportSize {
+export interface ViewportParams {
     width: number;
     height: number;
+    zoom: number;
+    panX: number;
+    panY: number;
 }
 
 export interface RenderContext {

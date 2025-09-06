@@ -1,4 +1,4 @@
-import { ViewportSize } from "./type";
+import { ViewportParams } from "./type";
 
 export default class GPUResources {
     device!: GPUDevice;
@@ -34,7 +34,7 @@ export default class GPUResources {
         }
     }
 
-    update({ width, height }: ViewportSize) {
+    update({ width, height }: ViewportParams) {
         this.canvas.width = width;
         this.canvas.height = height;
     }
@@ -156,7 +156,7 @@ export default class GPUResources {
         this.device.queue.submit([encoder.finish()]);
     }
 
-    get canvasSize(): ViewportSize {
+    get canvasSize(): Partial<ViewportParams> {
         return { width: this.canvas.width, height: this.canvas.height };
     }
 }
