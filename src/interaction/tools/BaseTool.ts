@@ -7,15 +7,13 @@ import ConnectTool from "./ConnectTool";
 import SelectionTool from "./SelectionTool";
 
 import { getType } from "@/utils/id";
+import ViewportTool from "./ViewportTool";
 
 export default class BaseTool implements InteractionTool {
-    constructor(
-        private interactor: Interactor,
-        private graph: Graph,
-    ) {}
+    constructor(private interactor: Interactor) { }
 
     async update() {
-        const id = await this.interactor.pickPosition();
+        const id = this.interactor.pickPosition();
         if (id === this.interactor.hoveredId) return;
         this.interactor.setHoveredId(id);
     }
@@ -25,6 +23,8 @@ export default class BaseTool implements InteractionTool {
 
         if (hoveredId == null) {
             this.interactor.clearSelectedIdSet();
+            this.interactor.setTool(new ViewportTool(this.interactor));
+            this.interactor.forwardEventToTool("onPointerDown", e);
             return;
         }
 
@@ -38,11 +38,17 @@ export default class BaseTool implements InteractionTool {
         }
         if (type === "handle") {
             this.interactor.setTool(
-                new ConnectTool(this.interactor, this.graph, hoveredId),
+                new ConnectTool(
+                    this.interactor,
+                    this.interactor.graph,
+                    hoveredId,
+                ),
             );
         }
 
-        this.interactor.setTool(new DragTool(this.interactor, this.graph));
+        this.interactor.setTool(
+            new DragTool(this.interactor, this.interactor.graph),
+        );
 
         this.interactor.forwardEventToTool("onPointerDown", e);
     }
@@ -50,8 +56,13 @@ export default class BaseTool implements InteractionTool {
     onKeyDown(e: KeyboardEvent): void {
         if (e.key === "Shift") {
             this.interactor.setTool(
-                new SelectionTool(this.interactor, this.graph),
+                new SelectionTool(this.interactor, this.interactor.graph),
             );
         }
+    }
+
+    onWheel(e: WheelEvent): void {
+        this.interactor.setTool(new ViewportTool(this.interactor));
+        this.interactor.forwardEventToTool("onWheel", e);
     }
 }

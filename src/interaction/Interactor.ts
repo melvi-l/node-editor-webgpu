@@ -3,6 +3,7 @@ import { RenderContext } from "@/renderer/type";
 
 import { InteractionTool } from "./Tool";
 import BaseTool from "./tools/BaseTool";
+import Viewport from "@/renderer/Viewport";
 
 import { scale, sub, Vec2 } from "@/utils/math";
 import { getType } from "@/utils/id";
@@ -19,13 +20,9 @@ type ToolEventMap = {
     onWheel: WheelEvent;
 };
 
-type PickingManager = {
-    pick: (x: number, y: number) => Promise<string | null>;
-};
-
 export class Interactor {
     private picker: PositionPicker<string> & AreaPicker<string>;
-    private graph: Graph;
+    private _graph: Graph;
     private context: RenderContext;
 
     private currentTool: InteractionTool;
@@ -34,12 +31,16 @@ export class Interactor {
     private _mousePosition: Vec2 = [0, 0];
     private mouseMoved = false;
 
-    constructor(picker: PositionPicker<string> & AreaPicker<string>, graph: Graph, context: RenderContext) {
+    constructor(
+        picker: PositionPicker<string> & AreaPicker<string>,
+        graph: Graph,
+        context: RenderContext,
+    ) {
         this.picker = picker;
-        this.graph = graph;
+        this._graph = graph;
         this.context = context;
 
-        this.currentTool = new BaseTool(this, this.graph);
+        this.currentTool = new BaseTool(this, this._graph);
 
         this.initEvents();
     }
@@ -69,11 +70,13 @@ export class Interactor {
     })();
 
     pickPosition(): string {
-        return this.graph.getClosestElement(this.picker.pickPosition(this.mousePosition));
+        return this._graph.getClosestElement(
+            this.picker.pickPosition(this.mousePosition),
+        );
     }
 
     pickArea(area: Zone): string[] {
-        return this.picker.pickArea(area)
+        return this.picker.pickArea(area);
     }
 
     onPointerMove = (e: PointerEvent) => {
@@ -94,12 +97,12 @@ export class Interactor {
     onKeyDown = (e: KeyboardEvent) => {
         if (e.key === "a") {
             const size: Vec2 = [200, 100];
-            const node = this.graph.addNode({
+            const node = this._graph.addNode({
                 position: sub(this.mousePosition, scale(size, 0.5)),
                 size,
             });
-            this.graph.addHandle(node.id, { type: "input" });
-            this.graph.addHandle(node.id, { type: "output" });
+            this._graph.addHandle(node.id, { type: "input" });
+            this._graph.addHandle(node.id, { type: "output" });
             return;
         }
 
@@ -109,7 +112,7 @@ export class Interactor {
 
             const type = e.key === "I" ? "input" : "output";
 
-            this.graph.addHandle(this.hoveredId, { type });
+            this._graph.addHandle(this.hoveredId, { type });
 
             return;
         }
@@ -117,7 +120,7 @@ export class Interactor {
             if (this.hoveredId == null || getType(this.hoveredId) !== "node")
                 return;
 
-            const node = this.graph.getNode(this.hoveredId);
+            const node = this._graph.getNode(this.hoveredId);
             if (node == null) return;
 
             const type = e.key === "i" ? "input" : "output";
@@ -127,7 +130,10 @@ export class Interactor {
             );
             if (typeHandle.length === 0) return;
 
-            this.graph.removeHandle(typeHandle[typeHandle.length - 1].id, node);
+            this._graph.removeHandle(
+                typeHandle[typeHandle.length - 1].id,
+                node,
+            );
 
             return;
         }
@@ -135,10 +141,10 @@ export class Interactor {
             for (const selectedId of this.context.state.selectedIdSet) {
                 const type = getType(selectedId);
                 if (type === "node") {
-                    this.graph.removeNode(selectedId);
+                    this._graph.removeNode(selectedId);
                 }
                 if (type === "edge") {
-                    this.graph.removeEdge(selectedId);
+                    this._graph.removeEdge(selectedId);
                 }
             }
         }
@@ -163,6 +169,7 @@ export class Interactor {
 
     // Tool
     setTool(tool: InteractionTool) {
+        console.log("[INTERACTOR] Switch to tool:", tool.constructor.name);
         this.currentTool = tool;
     }
     forwardEventToTool<K extends keyof ToolEventMap>(
@@ -175,7 +182,7 @@ export class Interactor {
         fn?.call(this.currentTool, event);
     }
     resetTool() {
-        this.currentTool = new BaseTool(this, this.graph);
+        this.setTool(new BaseTool(this));
     }
 
     // State
@@ -199,5 +206,12 @@ export class Interactor {
     }
     setHoveredId(hoveredId: string | null) {
         this.context.state.hoveredId = hoveredId;
+    }
+
+    get graph(): Graph {
+        return this._graph;
+    }
+    get viewport(): Viewport {
+        return this.context.viewport;
     }
 }
